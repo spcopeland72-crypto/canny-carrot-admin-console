@@ -3,11 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { BusinessRecord, CustomerRecord } from '@/src/types';
-import AdminLayout from './components/AdminLayout';
+import AdminLayout, { type ViewType } from './components/AdminLayout';
 import { EmailList } from './components/EmailList';
 import { EmailToolbar } from './components/EmailToolbar';
-
-type ViewType = 'Members' | 'Customers' | 'Apps' | 'Website' | 'Email' | 'Drafts' | 'Archive' | 'Trash';
 
 export default function Home() {
   const router = useRouter();
