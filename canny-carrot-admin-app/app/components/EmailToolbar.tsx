@@ -1,17 +1,6 @@
 'use client'
 
-import {
-  RefreshCw,
-  MoreVertical,
-  ChevronLeft,
-  ChevronRight,
-  Archive,
-  Trash2,
-  MailOpen,
-  Tag,
-  Clock,
-  ChevronDown,
-} from 'lucide-react'
+import { useState } from 'react'
 import { Button } from '@/src/components/ui/button'
 import {
   DropdownMenu,
@@ -20,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/src/components/ui/dropdown-menu'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface EmailToolbarProps {
   onRefresh?: () => void
@@ -32,6 +22,9 @@ export function EmailToolbar({
   selectedCount = 0,
   totalCount = 0 
 }: EmailToolbarProps) {
+  const [showSelectMenu, setShowSelectMenu] = useState(false)
+  const [showMoreMenu, setShowMoreMenu] = useState(false)
+
   const handleRefresh = () => {
     if (onRefresh) {
       onRefresh()
@@ -39,17 +32,17 @@ export function EmailToolbar({
   }
 
   return (
-    <div className="h-12 bg-white flex items-center justify-between px-2 border-b border-[#f0f0f0]">
-      {/* Left Section */}
-      <div className="flex items-center gap-1">
-        {/* Select All Checkbox */}
-        <div className="flex items-center px-2">
-          <DropdownMenu>
+    <>
+      <div className="h-12 bg-white flex items-center justify-between px-2 border-b border-[#f0f0f0]">
+        {/* Left Section */}
+        <div className="flex items-center gap-0">
+          {/* Select All Checkbox */}
+          <DropdownMenu open={showSelectMenu} onOpenChange={setShowSelectMenu}>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-9 px-2 hover:bg-[#f1f3f4] rounded">
+              <button className="h-9 px-2 hover:bg-[#f1f3f4] rounded flex items-center gap-1">
                 <div className="h-5 w-5 rounded border border-[#5f6368] flex items-center justify-center" />
-                <ChevronDown className="w-4 h-4 ml-1 text-[#5f6368]" />
-              </Button>
+                <span className="text-[#5f6368] text-xs">▼</span>
+              </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               <DropdownMenuItem>All</DropdownMenuItem>
@@ -59,79 +52,82 @@ export function EmailToolbar({
               <DropdownMenuItem>Starred</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* Refresh Button */}
+          <button
+            onClick={handleRefresh}
+            className="h-9 w-9 hover:bg-[#f1f3f4] rounded-full flex items-center justify-center"
+            title="Refresh"
+          >
+            <span className="text-[#5f6368] text-lg">↻</span>
+          </button>
+
+          {/* More Menu (3-dot) */}
+          <DropdownMenu open={showMoreMenu} onOpenChange={setShowMoreMenu}>
+            <DropdownMenuTrigger asChild>
+              <button className="h-9 w-9 hover:bg-[#f1f3f4] rounded-full flex items-center justify-center">
+                <span className="text-[#5f6368] text-xl">⋮</span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem>Mark all as read</DropdownMenuItem>
+              <DropdownMenuItem>Mark all as unread</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>Select all</DropdownMenuItem>
+              <DropdownMenuItem>Deselect all</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>Settings</DropdownMenuItem>
+              <DropdownMenuItem>Keyboard shortcuts</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {selectedCount > 0 && (
+            <>
+              <div className="w-px h-6 bg-[#e8eaed] mx-2" />
+              
+              <button className="h-9 w-9 hover:bg-[#f1f3f4] rounded-full flex items-center justify-center">
+                <span className="text-[#5f6368] text-base">📦</span>
+              </button>
+              <button className="h-9 w-9 hover:bg-[#f1f3f4] rounded-full flex items-center justify-center">
+                <span className="text-[#5f6368] text-base">🗑</span>
+              </button>
+              <button className="h-9 w-9 hover:bg-[#f1f3f4] rounded-full flex items-center justify-center">
+                <span className="text-[#5f6368] text-base">✉</span>
+              </button>
+              <button className="h-9 w-9 hover:bg-[#f1f3f4] rounded-full flex items-center justify-center">
+                <span className="text-[#5f6368] text-base">⏰</span>
+              </button>
+              <button className="h-9 w-9 hover:bg-[#f1f3f4] rounded-full flex items-center justify-center">
+                <span className="text-[#5f6368] text-base">🏷</span>
+              </button>
+
+              <span className="text-[13px] text-[#5f6368] ml-2">
+                {selectedCount} selected
+              </span>
+            </>
+          )}
         </div>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleRefresh}
-          className="h-9 w-9 hover:bg-[#f1f3f4] rounded-full"
-          title="Refresh"
-        >
-          <RefreshCw className="w-4 h-4 text-[#5f6368]" />
-        </Button>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 hover:bg-[#f1f3f4] rounded-full"
-            >
-              <MoreVertical className="w-4 h-4 text-[#5f6368]" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuItem>Mark all as read</DropdownMenuItem>
-            <DropdownMenuItem>Mark all as unread</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>Select all</DropdownMenuItem>
-            <DropdownMenuItem>Deselect all</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>Settings</DropdownMenuItem>
-            <DropdownMenuItem>Keyboard shortcuts</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {selectedCount > 0 && (
-          <>
-            <div className="w-px h-6 bg-[#e8eaed] mx-2" />
-            
-            <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-[#f1f3f4] rounded-full">
-              <Archive className="w-4 h-4 text-[#5f6368]" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-[#f1f3f4] rounded-full">
-              <Trash2 className="w-4 h-4 text-[#5f6368]" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-[#f1f3f4] rounded-full">
-              <MailOpen className="w-4 h-4 text-[#5f6368]" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-[#f1f3f4] rounded-full">
-              <Clock className="w-4 h-4 text-[#5f6368]" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-[#f1f3f4] rounded-full">
-              <Tag className="w-4 h-4 text-[#5f6368]" />
-            </Button>
-
-            <span className="text-[13px] text-[#5f6368] ml-2">
-              {selectedCount} selected
-            </span>
-          </>
-        )}
+        {/* Right Section - Pagination */}
+        <div className="flex items-center gap-1">
+          <span className="text-[12px] text-[#5f6368] mr-2">
+            1-{Math.min(50, totalCount)} of {totalCount.toLocaleString()}
+          </span>
+          <button 
+            className="h-9 w-9 hover:bg-[#f1f3f4] rounded-full flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed" 
+            disabled
+            title="Previous"
+          >
+            <ChevronLeft className="w-4 h-4 text-[#5f6368]" />
+          </button>
+          <button 
+            className="h-9 w-9 hover:bg-[#f1f3f4] rounded-full flex items-center justify-center"
+            title="Next"
+          >
+            <ChevronRight className="w-4 h-4 text-[#5f6368]" />
+          </button>
+        </div>
       </div>
-
-      {/* Right Section - Pagination */}
-      <div className="flex items-center gap-1">
-        <span className="text-[12px] text-[#5f6368] mr-2">
-          1-{Math.min(50, totalCount)} of {totalCount.toLocaleString()}
-        </span>
-        <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-[#f1f3f4] rounded-full" disabled>
-          <ChevronLeft className="w-4 h-4 text-[#5f6368]" />
-        </Button>
-        <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-[#f1f3f4] rounded-full">
-          <ChevronRight className="w-4 h-4 text-[#5f6368]" />
-        </Button>
-      </div>
-    </div>
+    </>
   )
 }

@@ -112,6 +112,7 @@ export default function Home() {
       searchQuery={searchQuery}
       onSearchChange={setSearchQuery}
       onRefresh={handleRefresh}
+      totalCount={listItems.length}
     >
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 m-4 rounded">

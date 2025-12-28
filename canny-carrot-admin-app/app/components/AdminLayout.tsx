@@ -14,6 +14,7 @@ interface AdminLayoutProps {
   searchQuery?: string
   onSearchChange?: (query: string) => void
   onRefresh?: () => void
+  totalCount?: number
 }
 
 export default function AdminLayout({
@@ -24,6 +25,7 @@ export default function AdminLayout({
   searchQuery = '',
   onSearchChange,
   onRefresh,
+  totalCount = 0,
 }: AdminLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
 
@@ -44,7 +46,7 @@ export default function AdminLayout({
         <AdminTopBar
           searchQuery={searchQuery}
           onSearchChange={onSearchChange}
-          onRefresh={onRefresh}
+          totalCount={totalCount}
         />
 
         {/* Content Area */}

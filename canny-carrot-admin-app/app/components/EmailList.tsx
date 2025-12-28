@@ -2,8 +2,6 @@
 
 import { useState } from 'react'
 import { EmailListItem } from './EmailListItem'
-import { EmptyState } from '@/src/components/common/empty-state'
-import { Users } from 'lucide-react'
 
 interface ListItem {
   id: string
@@ -40,11 +38,9 @@ export function EmailList({ items, emptyMessage = 'No items found', onItemPress 
 
   if (items.length === 0) {
     return (
-      <EmptyState
-        icon={Users}
-        title="No items"
-        description={emptyMessage}
-      />
+      <div className="flex-1 flex items-center justify-center bg-white">
+        <p className="text-[#5f6368] text-sm">{emptyMessage}</p>
+      </div>
     )
   }
 
