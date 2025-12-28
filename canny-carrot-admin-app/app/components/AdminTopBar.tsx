@@ -28,8 +28,8 @@ export function AdminTopBar({
     <div className="flex flex-col bg-white border-b-2 border-[#e8eaed] shadow-[0_1px_2px_0_rgba(60,64,67,.3),0_2px_6px_2px_rgba(60,64,67,.15)]">
       {/* Top Bar Main Row */}
       <div className="flex items-center px-4 py-3 min-h-[64px]">
-        {/* Logo - Top Left (restored from working commit 5b4a971) */}
-        <div className="flex items-center flex-shrink-0 pr-4">
+        {/* Logo - Top Left (first element, flex: 0 to prevent growing) */}
+        <div className="flex items-center" style={{ flex: 0, paddingRight: '16px' }}>
           <Image
             src="/assets/logo.png"
             alt="Canny Carrot"
@@ -40,9 +40,9 @@ export function AdminTopBar({
           />
         </div>
 
-        {/* Search */}
+        {/* Search - flex-1 to take remaining space, centered */}
         <div className="flex-1 flex justify-center">
-          <div className="flex items-center bg-white border-2 border-[#dadce0] px-4 h-12 max-w-[720px] w-full">
+          <div className="flex items-center bg-white border-2 border-[#dadce0] px-4 h-12 max-w-[720px] w-full" style={{ height: '48px' }}>
             <Search className="w-5 h-5 text-[#5F6368] mr-3 flex-shrink-0" />
             <input
               type="text"

@@ -35,9 +35,15 @@ export function EmailListItem({ item, isSelected, onSelect, onPress }: EmailList
     setIsStarred(!isStarred)
   }
 
+  const handleClick = () => {
+    if (onPress) {
+      onPress();
+    }
+  };
+
   return (
     <div
-      onClick={onPress}
+      onClick={handleClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
