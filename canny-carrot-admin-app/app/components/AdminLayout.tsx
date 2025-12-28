@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { AdminSidebar } from './AdminSidebar'
 import { AdminTopBar } from './AdminTopBar'
 
-type ViewType = 'Members' | 'Customers' | 'Apps' | 'Website' | 'Drafts' | 'Archive' | 'Trash'
+type ViewType = 'Members' | 'Customers' | 'Apps' | 'Website' | 'Email' | 'Drafts' | 'Archive' | 'Trash'
 
 interface AdminLayoutProps {
   children: React.ReactNode
