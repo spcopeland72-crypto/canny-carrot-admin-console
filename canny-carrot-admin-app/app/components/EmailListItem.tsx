@@ -54,11 +54,13 @@ export function EmailListItem({ item, isSelected, onSelect, onPress }: EmailList
       )}
     >
       {/* Checkbox */}
-      <div className="flex items-center justify-center w-8 md:w-10 flex-shrink-0">
+      <div 
+        className="flex items-center justify-center w-8 md:w-10 flex-shrink-0"
+        onClick={(e) => e.stopPropagation()}
+      >
         <Checkbox
           checked={isSelected}
           onCheckedChange={(checked) => onSelect?.(checked as boolean)}
-          onClick={(e) => e.stopPropagation()}
           className={cn(
             !isHovered && !isSelected && 'opacity-0 md:opacity-100'
           )}
@@ -69,6 +71,7 @@ export function EmailListItem({ item, isSelected, onSelect, onPress }: EmailList
       <button
         onClick={handleStarClick}
         className="flex-shrink-0 hover:scale-110 transition-transform w-8 md:w-10 flex items-center justify-center"
+        type="button"
       >
         <Star
           className={cn(
