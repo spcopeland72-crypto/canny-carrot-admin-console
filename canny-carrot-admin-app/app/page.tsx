@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { businessData, customerData } from '@/src/services/dataAccess';
 import type { BusinessRecord, CustomerRecord } from '@/src/types';
 
 type ViewType = 'Members' | 'Customers';
@@ -19,11 +18,21 @@ export default function Home() {
       setError(null);
       try {
         if (currentView === 'Members') {
-          const data = await businessData.getAll();
-          setBusinesses(data || []);
+          const response = await fetch('/api/businesses');
+          const result = await response.json();
+          if (result.success) {
+            setBusinesses(result.data || []);
+          } else {
+            throw new Error(result.error || 'Failed to fetch businesses');
+          }
         } else if (currentView === 'Customers') {
-          const data = await customerData.getAll();
-          setCustomers(data || []);
+          const response = await fetch('/api/customers');
+          const result = await response.json();
+          if (result.success) {
+            setCustomers(result.data || []);
+          } else {
+            throw new Error(result.error || 'Failed to fetch customers');
+          }
         }
       } catch (error: any) {
         console.error('[Admin] Error loading data:', error);

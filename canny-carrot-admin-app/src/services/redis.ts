@@ -5,19 +5,15 @@
  * All operations go through the API to Redis database
  */
 
-// Get API base URL
+// Get API base URL (server-side only)
 const getApiBaseUrl = (): string => {
-  // Use Next.js environment variables
+  // Use Next.js environment variables (server-side)
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_BASE_URL || 'https://api.cannycarrot.com';
-  console.log('[Redis Service] Using API URL:', apiUrl);
   return apiUrl;
 };
 
 const API_BASE_URL = getApiBaseUrl();
 const REDIS_API_URL = `${API_BASE_URL}/api/v1/redis`;
-
-console.log('[Redis Service] Final API_BASE_URL:', API_BASE_URL);
-console.log('[Redis Service] Final REDIS_API_URL:', REDIS_API_URL);
 
 /**
  * Check if API/Redis is available
