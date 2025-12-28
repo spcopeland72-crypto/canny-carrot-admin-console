@@ -22,9 +22,6 @@
     "web": {},
     "extra": {
       "apiUrl": "https://api.cannycarrot.com"
-    },
-    "extra": {
-      "apiUrl": "https://api.cannycarrot.com"
     }
   }
 }
