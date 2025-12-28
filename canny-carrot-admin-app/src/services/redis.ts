@@ -5,27 +5,20 @@
  * All operations go through the API to Redis database
  */
 
-import { Platform } from 'react-native';
-import Constants from 'expo-constants';
-
-// Get API base URL
+// Get API base URL for Next.js
 const getApiBaseUrl = (): string => {
-  const apiUrl = Constants.expoConfig?.extra?.apiUrl;
-  if (apiUrl) {
-    console.log('[Redis Service] Using API URL from expoConfig.extra.apiUrl:', apiUrl);
-    return apiUrl;
+  // Next.js environment variables - NEXT_PUBLIC_* are available on client and server
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_BASE_URL || 'https://api.cannycarrot.com';
+  
+  if (typeof window === 'undefined') {
+    // Server-side
+    console.log('[Redis Service] Server-side - Using API URL:', apiUrl);
+  } else {
+    // Client-side
+    console.log('[Redis Service] Client-side - Using API URL:', apiUrl);
   }
   
-  if (Platform.OS === 'web') {
-    const webUrl = process.env.EXPO_PUBLIC_API_URL || process.env.API_BASE_URL || 'http://localhost:3001';
-    console.log('[Redis Service] Web platform - Using API URL:', webUrl);
-    console.log('[Redis Service] EXPO_PUBLIC_API_URL:', process.env.EXPO_PUBLIC_API_URL);
-    console.log('[Redis Service] API_BASE_URL:', process.env.API_BASE_URL);
-    return webUrl;
-  }
-  const nativeUrl = __DEV__ ? 'http://localhost:3001' : 'https://api.cannycarrot.com';
-  console.log('[Redis Service] Native platform - Using API URL:', nativeUrl);
-  return nativeUrl;
+  return apiUrl;
 };
 
 const API_BASE_URL = getApiBaseUrl();
