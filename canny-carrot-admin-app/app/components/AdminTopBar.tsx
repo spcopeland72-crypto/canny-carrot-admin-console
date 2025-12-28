@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { Search, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/src/lib/utils'
@@ -27,15 +28,15 @@ export function AdminTopBar({
     <div className="flex flex-col bg-white border-b-2 border-[#e8eaed] shadow-[0_1px_2px_0_rgba(60,64,67,.3),0_2px_6px_2px_rgba(60,64,67,.15)]">
       {/* Top Bar Main Row */}
       <div className="flex items-center px-4 py-3 min-h-[64px]">
-        {/* Logo - Top Left (first element) */}
-        <div className="flex items-center flex-shrink-0 pr-4" style={{ flex: 0 }}>
-          <img
+        {/* Logo - Top Left (restored from working commit 5b4a971) */}
+        <div className="flex items-center flex-shrink-0 pr-4">
+          <Image
             src="/assets/logo.png"
-            alt="Canny Carrot Rewards"
+            alt="Canny Carrot"
             width={196}
             height={72}
             className="object-contain"
-            style={{ display: 'block', maxHeight: '72px', width: 'auto' }}
+            priority
           />
         </div>
 
