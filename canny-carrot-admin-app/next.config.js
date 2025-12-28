@@ -19,6 +19,10 @@ const nextConfig = {
     return config;
   },
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
+  // Enable image optimization
+  images: {
+    unoptimized: true, // Disable Next.js image optimization for static assets
+  },
 }
 
 module.exports = nextConfig
