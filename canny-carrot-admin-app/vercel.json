@@ -1,11 +1,14 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "npx expo export:web",
   "outputDirectory": "web-build",
   "devCommand": "npm run web",
   "installCommand": "npm install",
   "framework": null,
-  "env": {
-    "EXPO_PUBLIC_API_URL": "https://api.cannycarrot.com"
-  }
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }
 
