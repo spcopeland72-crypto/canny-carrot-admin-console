@@ -1,10 +1,8 @@
 'use client'
 
-import Image from 'next/image'
-import { Search, X } from 'lucide-react'
+import { Search, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/src/lib/utils'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface AdminTopBarProps {
   searchQuery?: string
