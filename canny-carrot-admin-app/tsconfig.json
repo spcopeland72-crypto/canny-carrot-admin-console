@@ -19,9 +19,10 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@/src/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "app/**/*", "src/services/**/*", "src/types/**/*", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "src/components", "src/utils"]
+  "include": ["next-env.d.ts", "app/**/*", "src/lib/**/*", "src/services/**/*", "src/types/**/*", "src/components/ui/**/*", "src/components/common/**/*", ".next/types/**/*.ts"],
+  "exclude": ["node_modules", "src/components/AdminBusinessesPage.tsx", "src/components/AdminCustomersPage.tsx", "src/components/EmailClientLayout.tsx", "src/components/EmailList.tsx", "src/components/EmailListItem.tsx", "src/components/EmailToolbar.tsx", "src/components/HomeScreen.tsx", "src/components/PageTemplate.tsx", "src/components/BottomNavigation.tsx"]
 }

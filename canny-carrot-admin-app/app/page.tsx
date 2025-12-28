@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import type { BusinessRecord, CustomerRecord } from '@/src/types';
+import AdminLayout from './components/AdminLayout';
+import { EmailList } from './components/EmailList';
+import { EmailToolbar } from './components/EmailToolbar';
 
 type ViewType = 'Members' | 'Customers';
 
@@ -45,104 +48,87 @@ export default function Home() {
     loadData();
   }, [currentView]);
 
+  // Convert businesses/customers to EmailList format
+  const listItems = (currentView === 'Members' ? businesses : customers).map((item) => {
+    const record = item as BusinessRecord | CustomerRecord;
+    return {
+      id: record.profile.id,
+      senderName: record.profile.name || 'N/A',
+      senderEmail: record.profile.email || 'N/A',
+      subject: currentView === 'Members' 
+        ? (record as BusinessRecord).profile.name 
+        : (record as CustomerRecord).profile.name || 'Customer',
+      preview: currentView === 'Members'
+        ? `Status: ${(record as BusinessRecord).status} | Tier: ${(record as BusinessRecord).subscriptionTier || 'N/A'}`
+        : `Status: ${(record as CustomerRecord).status}`,
+      date: record.profile.createdAt || record.joinDate || new Date(),
+      isRead: record.status !== 'pending',
+      isStarred: false,
+      hasAttachments: false,
+    };
+  });
+
+  const handleRefresh = () => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        if (currentView === 'Members') {
+          const response = await fetch('/api/businesses');
+          const result = await response.json();
+          if (result.success) {
+            setBusinesses(result.data || []);
+          }
+        } else {
+          const response = await fetch('/api/customers');
+          const result = await response.json();
+          if (result.success) {
+            setCustomers(result.data || []);
+          }
+        }
+      } catch (error: any) {
+        console.error('[Admin] Error refreshing:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <h1 className="text-2xl font-bold text-gray-900">Canny Carrot Admin</h1>
-            <nav className="flex space-x-4">
-              <button
-                onClick={() => setCurrentView('Members')}
-                className={`px-4 py-2 rounded ${
-                  currentView === 'Members'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                Members
-              </button>
-              <button
-                onClick={() => setCurrentView('Customers')}
-                className={`px-4 py-2 rounded ${
-                  currentView === 'Customers'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                Customers
-              </button>
-            </nav>
-          </div>
+    <AdminLayout
+      currentView={currentView}
+      onViewChange={(view) => setCurrentView(view)}
+      membersCount={businesses.length}
+    >
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 m-4 rounded">
+          {error}
         </div>
-      </div>
+      )}
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
+      <EmailToolbar
+        onRefresh={handleRefresh}
+        totalCount={listItems.length}
+      />
 
-        {isLoading ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600">Loading...</p>
-          </div>
-        ) : (
-          <div className="bg-white shadow rounded-lg overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Email
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {currentView === 'Members' && businesses.map((business) => (
-                  <tr key={business.profile.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {business.profile.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {business.profile.email}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {business.status}
-                    </td>
-                  </tr>
-                ))}
-                {currentView === 'Customers' && customers.map((customer) => (
-                  <tr key={customer.profile.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {customer.profile.name || 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {customer.profile.email || 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {customer.status}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {currentView === 'Members' && businesses.length === 0 && (
-              <div className="text-center py-12 text-gray-500">No businesses found</div>
-            )}
-            {currentView === 'Customers' && customers.length === 0 && (
-              <div className="text-center py-12 text-gray-500">No customers found</div>
-            )}
-          </div>
-        )}
-      </main>
-    </div>
+      {isLoading ? (
+        <div className="flex-1 flex items-center justify-center py-12">
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      ) : (
+        <EmailList
+          items={listItems}
+          emptyMessage={
+            currentView === 'Members'
+              ? 'No businesses found'
+              : 'No customers found'
+          }
+          onItemPress={(item) => {
+            // TODO: Open detail view
+            console.log('Item pressed:', item);
+          }}
+        />
+      )}
+    </AdminLayout>
   );
 }
-
