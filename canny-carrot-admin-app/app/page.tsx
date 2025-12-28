@@ -7,7 +7,7 @@ import AdminLayout from './components/AdminLayout';
 import { EmailList } from './components/EmailList';
 import { EmailToolbar } from './components/EmailToolbar';
 
-type ViewType = 'Members' | 'Customers' | 'Apps' | 'Website' | 'Drafts' | 'Archive' | 'Trash';
+type ViewType = 'Members' | 'Customers' | 'Apps' | 'Website' | 'Email' | 'Drafts' | 'Archive' | 'Trash';
 
 export default function Home() {
   const router = useRouter();

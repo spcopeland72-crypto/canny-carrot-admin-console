@@ -11,12 +11,13 @@ import {
   StarIcon, 
   ClockIcon, 
   SendIcon, 
+  MailIcon,
   FileTextIcon, 
   ArchiveIcon, 
   TrashIcon 
 } from './AdminSidebarIcons'
 
-type ViewType = 'Members' | 'Customers' | 'Apps' | 'Website' | 'Drafts' | 'Archive' | 'Trash'
+type ViewType = 'Members' | 'Customers' | 'Apps' | 'Website' | 'Email' | 'Drafts' | 'Archive' | 'Trash'
 
 interface AdminSidebarProps {
   isOpen?: boolean
@@ -31,6 +32,7 @@ const menuItems = [
   { id: 'Customers' as ViewType, label: 'Customers', icon: StarIcon },
   { id: 'Apps' as ViewType, label: 'Apps', icon: ClockIcon },
   { id: 'Website' as ViewType, label: 'Website', icon: SendIcon },
+  { id: 'Email' as ViewType, label: 'Email', icon: MailIcon },
   { id: 'Drafts' as ViewType, label: 'Drafts', icon: FileTextIcon },
 ]
 

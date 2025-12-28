@@ -27,9 +27,9 @@ export function AdminTopBar({
   return (
     <div className="flex flex-col bg-white border-b-2 border-[#e8eaed] shadow-[0_1px_2px_0_rgba(60,64,67,.3),0_2px_6px_2px_rgba(60,64,67,.15)]">
       {/* Top Bar Main Row */}
-      <div className="flex items-center px-4 py-3 min-h-[64px]">
+      <div className="flex items-center min-h-[64px]" style={{ paddingLeft: '16px', paddingRight: '16px', paddingTop: '12px', paddingBottom: '12px' }}>
         {/* Logo - Top Left (first element, flex: 0 to prevent growing) */}
-        <div className="flex items-center" style={{ flex: 0, paddingRight: '16px' }}>
+        <div className="flex items-center flex-shrink-0" style={{ flex: 0, paddingRight: '16px' }}>
           <Image
             src="/assets/logo.png"
             alt="Canny Carrot"
@@ -37,6 +37,7 @@ export function AdminTopBar({
             height={72}
             className="object-contain"
             priority
+            style={{ width: '196px', height: '72px', display: 'block' }}
           />
         </div>
 
