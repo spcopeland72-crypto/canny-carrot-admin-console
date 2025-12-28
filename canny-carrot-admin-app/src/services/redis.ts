@@ -5,15 +5,34 @@
  * All operations go through the API to Redis database
  */
 
-// Get API base URL (server-side only)
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
+
+// Get API base URL
 const getApiBaseUrl = (): string => {
-  // Use Next.js environment variables (server-side)
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_BASE_URL || 'https://api.cannycarrot.com';
-  return apiUrl;
+  const apiUrl = Constants.expoConfig?.extra?.apiUrl;
+  if (apiUrl) {
+    console.log('[Redis Service] Using API URL from expoConfig.extra.apiUrl:', apiUrl);
+    return apiUrl;
+  }
+  
+  if (Platform.OS === 'web') {
+    const webUrl = process.env.EXPO_PUBLIC_API_URL || process.env.API_BASE_URL || 'http://localhost:3001';
+    console.log('[Redis Service] Web platform - Using API URL:', webUrl);
+    console.log('[Redis Service] EXPO_PUBLIC_API_URL:', process.env.EXPO_PUBLIC_API_URL);
+    console.log('[Redis Service] API_BASE_URL:', process.env.API_BASE_URL);
+    return webUrl;
+  }
+  const nativeUrl = __DEV__ ? 'http://localhost:3001' : 'https://api.cannycarrot.com';
+  console.log('[Redis Service] Native platform - Using API URL:', nativeUrl);
+  return nativeUrl;
 };
 
 const API_BASE_URL = getApiBaseUrl();
 const REDIS_API_URL = `${API_BASE_URL}/api/v1/redis`;
+
+console.log('[Redis Service] Final API_BASE_URL:', API_BASE_URL);
+console.log('[Redis Service] Final REDIS_API_URL:', REDIS_API_URL);
 
 /**
  * Check if API/Redis is available
@@ -33,7 +52,10 @@ export const isRedisAvailable = async (): Promise<boolean> => {
  * Check if device is online
  */
 export const isOnline = (): boolean => {
-  return typeof navigator !== 'undefined' && navigator.onLine;
+  if (Platform.OS === 'web') {
+    return typeof navigator !== 'undefined' && navigator.onLine;
+  }
+  return true;
 };
 
 /**
