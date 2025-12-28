@@ -1,13 +1,19 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState } from 'react'
 import { AdminSidebar } from './AdminSidebar'
+import { AdminTopBar } from './AdminTopBar'
+
+type ViewType = 'Members' | 'Customers' | 'Apps' | 'Website' | 'Drafts' | 'Archive' | 'Trash'
 
 interface AdminLayoutProps {
   children: React.ReactNode
-  currentView?: 'Members' | 'Customers'
-  onViewChange?: (view: 'Members' | 'Customers') => void
+  currentView?: ViewType
+  onViewChange?: (view: ViewType) => void
   membersCount?: number
+  searchQuery?: string
+  onSearchChange?: (query: string) => void
+  onRefresh?: () => void
 }
 
 export default function AdminLayout({
@@ -15,11 +21,14 @@ export default function AdminLayout({
   currentView = 'Members',
   onViewChange,
   membersCount = 0,
+  searchQuery = '',
+  onSearchChange,
+  onRefresh,
 }: AdminLayoutProps) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
 
   return (
-    <div className="flex h-screen bg-[#f6f8fc] overflow-hidden">
+    <div className="flex h-screen bg-[#FFFFFF] overflow-hidden">
       {/* Sidebar */}
       <AdminSidebar 
         isOpen={isSidebarOpen} 
@@ -31,23 +40,15 @@ export default function AdminLayout({
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Suspense fallback={<div className="h-14 md:h-16 bg-white border-b border-[#e8eaed]" />}>
-          {/* Header */}
-          <div className="h-14 md:h-16 bg-white border-b border-[#e8eaed] flex items-center px-4">
-            <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="lg:hidden p-2 rounded hover:bg-gray-100 mr-2"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-            <h2 className="text-lg font-medium text-gray-900">
-              {currentView === 'Members' ? 'Business Members' : 'Customers'}
-            </h2>
-          </div>
-        </Suspense>
-        <main className="flex-1 overflow-hidden flex flex-col">
+        {/* Top Bar */}
+        <AdminTopBar
+          searchQuery={searchQuery}
+          onSearchChange={onSearchChange}
+          onRefresh={onRefresh}
+        />
+
+        {/* Content Area */}
+        <main className="flex-1 overflow-hidden flex flex-col bg-[#FFFFFF]">
           {children}
         </main>
       </div>

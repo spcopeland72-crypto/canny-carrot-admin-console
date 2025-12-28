@@ -1,24 +1,43 @@
 'use client'
 
-import { 
-  Users, 
-  UserCircle,
-  X,
-  ChevronDown
-} from 'lucide-react'
+import { X, ChevronDown } from 'lucide-react'
 import { Button } from '@/src/components/ui/button'
 import { ScrollArea } from '@/src/components/ui/scroll-area'
 import { useState } from 'react'
 import { cn } from '@/src/lib/utils'
 import { useRouter } from 'next/navigation'
+import { 
+  InboxIcon, 
+  StarIcon, 
+  ClockIcon, 
+  SendIcon, 
+  FileTextIcon, 
+  ArchiveIcon, 
+  TrashIcon 
+} from './AdminSidebarIcons'
+
+type ViewType = 'Members' | 'Customers' | 'Apps' | 'Website' | 'Drafts' | 'Archive' | 'Trash'
 
 interface AdminSidebarProps {
   isOpen?: boolean
   onClose?: () => void
-  currentView?: 'Members' | 'Customers'
-  onViewChange?: (view: 'Members' | 'Customers') => void
+  currentView?: ViewType
+  onViewChange?: (view: ViewType) => void
   membersCount?: number
 }
+
+const menuItems = [
+  { id: 'Members' as ViewType, label: 'Members', icon: InboxIcon },
+  { id: 'Customers' as ViewType, label: 'Customers', icon: StarIcon },
+  { id: 'Apps' as ViewType, label: 'Apps', icon: ClockIcon },
+  { id: 'Website' as ViewType, label: 'Website', icon: SendIcon },
+  { id: 'Drafts' as ViewType, label: 'Drafts', icon: FileTextIcon },
+]
+
+const moreItems = [
+  { id: 'Archive' as ViewType, label: 'Archive', icon: ArchiveIcon },
+  { id: 'Trash' as ViewType, label: 'Trash', icon: TrashIcon },
+]
 
 export function AdminSidebar({ 
   isOpen = true, 
@@ -28,6 +47,8 @@ export function AdminSidebar({
   membersCount = 0
 }: AdminSidebarProps) {
   const router = useRouter()
+  const [isMoreExpanded, setIsMoreExpanded] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   return (
     <>
@@ -41,69 +62,109 @@ export function AdminSidebar({
 
       {/* Sidebar */}
       <aside className={cn(
-        'border-r border-[#e8eaed] bg-white flex flex-col h-full transition-all duration-300 z-50',
+        'bg-white flex flex-col h-full transition-all duration-300 z-50 border-r-2 border-[#dadce0]',
         'fixed lg:relative lg:translate-x-0',
         isOpen ? 'translate-x-0' : '-translate-x-full',
-        'w-64'
+        sidebarCollapsed ? 'w-[50px]' : 'w-64'
       )}>
-        {/* Logo and Close Button */}
-        <div className="flex items-center justify-between px-2 py-2 border-b border-[#e8eaed] lg:border-0">
-          <div 
-            className="flex items-center cursor-pointer px-2 py-1 hover:bg-gray-100 rounded-lg transition-colors"
-            onClick={() => router.push('/')}
-          >
-            <h1 className="text-xl font-bold text-blue-600">Canny Carrot</h1>
-            <span className="ml-2 text-sm text-gray-500">Admin</span>
-          </div>
+        {/* Sidebar Toggle */}
+        <button
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className="p-3 flex items-center justify-center border-b-2 border-[#dadce0]"
+        >
+          <span className="text-lg text-[#616161]">
+            {sidebarCollapsed ? '→' : '←'}
+          </span>
+        </button>
 
-          {/* Close button (Mobile only) */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="lg:hidden h-10 w-10 rounded-full hover:bg-gray-100"
-            onClick={onClose}
-          >
-            <X className="w-5 h-5 text-[#5f6368]" />
-          </Button>
-        </div>
+        {!sidebarCollapsed && (
+          <ScrollArea className="flex-1">
+            <nav className="py-1">
+              {menuItems.map((item) => {
+                const Icon = item.icon
+                const isActive = currentView === item.id
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => onViewChange?.(item.id)}
+                    className={cn(
+                      'flex items-center justify-between w-full px-4 py-2 transition-all h-10 my-0.5',
+                      isActive
+                        ? 'bg-[#d3e3fd]'
+                        : 'hover:bg-gray-100'
+                    )}
+                  >
+                    <div className="flex items-center flex-1 min-w-0">
+                      <div className="w-5 h-5 mr-4 flex-shrink-0 flex items-center justify-center">
+                        <Icon isActive={isActive} />
+                      </div>
+                      <span className={cn(
+                        'text-sm flex-1',
+                        isActive ? 'text-[#001d35] font-medium' : 'text-[#202124]'
+                      )}>
+                        {item.label}
+                      </span>
+                    </div>
+                    {item.id === 'Members' && membersCount !== undefined && membersCount > 0 && (
+                      <span className={cn(
+                        'text-xs ml-2 tabular-nums flex-shrink-0',
+                        isActive ? 'text-[#001d35] font-semibold' : 'text-[#5f6368]'
+                      )}>
+                        {membersCount > 999 ? '999+' : membersCount}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
 
-        {/* Navigation */}
-        <ScrollArea className="flex-1 px-2">
-          <nav className="space-y-0.5 py-2">
-            <button
-              onClick={() => onViewChange?.('Members')}
-              className={cn(
-                'flex items-center justify-between w-full px-4 py-2 rounded-r-full transition-all group h-10',
-                currentView === 'Members'
-                  ? 'bg-[#e8f0fe] text-[#1a73e8] font-medium'
-                  : 'hover:bg-[#f1f3f4] text-[#202124]'
-              )}
-            >
-              <div className="flex items-center gap-4">
-                <Users className="w-5 h-5" />
-                <span className="text-[14px]">Members</span>
-              </div>
-              {membersCount > 0 && (
-                <span className="text-xs text-gray-500">{membersCount}</span>
-              )}
-            </button>
+              {/* More Toggle */}
+              <button
+                onClick={() => setIsMoreExpanded(!isMoreExpanded)}
+                className="flex items-center w-full px-4 py-2 h-10 my-0.5 hover:bg-gray-100"
+              >
+                <div className="w-5 h-5 mr-4 flex-shrink-0 flex items-center justify-center">
+                  <ChevronDown className={cn(
+                    'w-4 h-4 text-[#5f6368] transition-transform',
+                    !isMoreExpanded && '-rotate-90'
+                  )} />
+                </div>
+                <span className="text-sm text-[#202124]">More</span>
+              </button>
 
-            <button
-              onClick={() => onViewChange?.('Customers')}
-              className={cn(
-                'flex items-center justify-between w-full px-4 py-2 rounded-r-full transition-all group h-10',
-                currentView === 'Customers'
-                  ? 'bg-[#e8f0fe] text-[#1a73e8] font-medium'
-                  : 'hover:bg-[#f1f3f4] text-[#202124]'
+              {/* More Items */}
+              {isMoreExpanded && (
+                <>
+                  {moreItems.map((item) => {
+                    const Icon = item.icon
+                    const isActive = currentView === item.id
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => onViewChange?.(item.id)}
+                        className={cn(
+                          'flex items-center w-full px-4 py-2 transition-all h-10 my-0.5',
+                          isActive
+                            ? 'bg-[#d3e3fd]'
+                            : 'hover:bg-gray-100'
+                        )}
+                      >
+                        <div className="w-5 h-5 mr-4 flex-shrink-0 flex items-center justify-center">
+                          <Icon isActive={isActive} />
+                        </div>
+                        <span className={cn(
+                          'text-sm',
+                          isActive ? 'text-[#001d35] font-medium' : 'text-[#202124]'
+                        )}>
+                          {item.label}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </>
               )}
-            >
-              <div className="flex items-center gap-4">
-                <UserCircle className="w-5 h-5" />
-                <span className="text-[14px]">Customers</span>
-              </div>
-            </button>
-          </nav>
-        </ScrollArea>
+            </nav>
+          </ScrollArea>
+        )}
       </aside>
     </>
   )

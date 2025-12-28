@@ -6,7 +6,7 @@ import AdminLayout from './components/AdminLayout';
 import { EmailList } from './components/EmailList';
 import { EmailToolbar } from './components/EmailToolbar';
 
-type ViewType = 'Members' | 'Customers';
+type ViewType = 'Members' | 'Customers' | 'Apps' | 'Website' | 'Drafts' | 'Archive' | 'Trash';
 
 export default function Home() {
   const [currentView, setCurrentView] = useState<ViewType>('Members');
@@ -14,6 +14,7 @@ export default function Home() {
   const [customers, setCustomers] = useState<CustomerRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const loadData = async () => {
@@ -48,8 +49,17 @@ export default function Home() {
     loadData();
   }, [currentView]);
 
+  // Filter data based on search query
+  const filteredData = (currentView === 'Members' ? businesses : customers).filter((item) => {
+    if (!searchQuery) return true
+    const name = item.profile.name?.toLowerCase() || ''
+    const email = item.profile.email?.toLowerCase() || ''
+    const query = searchQuery.toLowerCase()
+    return name.includes(query) || email.includes(query)
+  })
+
   // Convert businesses/customers to EmailList format
-  const listItems = (currentView === 'Members' ? businesses : customers).map((item) => {
+  const listItems = filteredData.map((item) => {
     const record = item as BusinessRecord | CustomerRecord;
     return {
       id: record.profile.id,
@@ -99,6 +109,9 @@ export default function Home() {
       currentView={currentView}
       onViewChange={(view) => setCurrentView(view)}
       membersCount={businesses.length}
+      searchQuery={searchQuery}
+      onSearchChange={setSearchQuery}
+      onRefresh={handleRefresh}
     >
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 m-4 rounded">
