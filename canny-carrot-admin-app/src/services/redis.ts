@@ -45,9 +45,11 @@ export const isRedisAvailable = async (): Promise<boolean> => {
  * Check if device is online
  */
 export const isOnline = (): boolean => {
-  if (Platform.OS === 'web') {
-    return typeof navigator !== 'undefined' && navigator.onLine;
+  // For Next.js web app, check browser navigator
+  if (typeof window !== 'undefined' && typeof navigator !== 'undefined') {
+    return navigator.onLine;
   }
+  // Server-side, assume online
   return true;
 };
 
