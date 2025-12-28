@@ -16,8 +16,7 @@ import {
   ArchiveIcon, 
   TrashIcon 
 } from './AdminSidebarIcons'
-
-type ViewType = 'Members' | 'Customers' | 'Apps' | 'Website' | 'Email' | 'Drafts' | 'Archive' | 'Trash'
+import type { ViewType } from './AdminLayout'
 
 interface AdminSidebarProps {
   isOpen?: boolean
