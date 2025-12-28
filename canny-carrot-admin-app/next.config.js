@@ -2,21 +2,23 @@
 const nextConfig = {
   reactStrictMode: true,
   // Exclude React Native components from build (they're Expo leftovers, not used in Next.js app)
-  webpack: (config, { isServer }) => {
+  webpack: (config) => {
     // Ignore react-native imports - these components aren't used by Next.js app
     config.resolve.alias = {
       ...config.resolve.alias,
+      'react-native': false,
     };
     
-    // Exclude src/components/*.tsx files from webpack (they import react-native)
-    // Only app/ directory is used for Next.js
-    if (!config.externals) {
-      config.externals = [];
-    }
+    // Ignore files in src/components (React Native components)
+    config.module = config.module || {};
+    config.module.rules = config.module.rules || [];
+    config.module.rules.push({
+      test: /src\/components\/.*\.(tsx?|jsx?)$/,
+      use: 'ignore-loader',
+    });
     
     return config;
   },
-  // Only compile app directory (not src/components with React Native)
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
 }
 
