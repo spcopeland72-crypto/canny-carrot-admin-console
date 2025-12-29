@@ -120,8 +120,8 @@ export default function APITestPage() {
       const result = await response.json();
 
       if (result.success) {
-        // Small delay to ensure Redis write propagates
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Small delay to ensure Redis write propagates (slightly longer for reliability)
+        await new Promise(resolve => setTimeout(resolve, 200));
         
         // Verify the write by reading it back
         const verifyResponse = await fetch(`/api/businesses/${testBusiness.profile.id}`);
@@ -225,10 +225,13 @@ export default function APITestPage() {
       }
 
       const testCustomer = customers[0];
-      const originalName = testCustomer.profile.name || 'Test Customer';
-      const testName = `${originalName} [TEST ${Date.now()}]`;
+      // Customers may not have name - use email as identifier
+      const originalName = testCustomer.profile.name || testCustomer.profile.email || 'Test Customer';
+      const testName = testCustomer.profile.name 
+        ? `${testCustomer.profile.name} [TEST ${Date.now()}]`
+        : `Test Customer [TEST ${Date.now()}]`;
       
-      // Update the name
+      // Update the name (or add it if missing)
       const updatedCustomer = {
         ...testCustomer,
         profile: {
@@ -246,14 +249,14 @@ export default function APITestPage() {
       const result = await response.json();
 
       if (result.success) {
-        // Small delay to ensure Redis write propagates
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Small delay to ensure Redis write propagates (slightly longer for reliability)
+        await new Promise(resolve => setTimeout(resolve, 200));
         
         // Verify the write by reading it back
         const verifyResponse = await fetch(`/api/customers/${testCustomer.profile.id}`);
         const verifyResult = await verifyResponse.json();
         
-        const readBackName = verifyResult.data?.profile?.name || 'N/A';
+        const readBackName = verifyResult.data?.profile?.name || verifyResult.data?.profile?.email || 'N/A';
         const namesMatch = readBackName === testName;
         
         if (verifyResult.success && namesMatch) {

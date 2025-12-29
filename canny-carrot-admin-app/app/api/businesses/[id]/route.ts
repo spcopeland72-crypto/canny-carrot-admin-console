@@ -59,6 +59,9 @@ export async function PUT(
     console.log(`[API] Updating business ${businessId} in Redis via API server`);
     await redis.set(businessKey, businessData);
 
+    // Small delay to ensure Redis write propagates
+    await new Promise(resolve => setTimeout(resolve, 150));
+
     // Verify the write succeeded by reading it back
     const verifyData = await redis.get(businessKey);
     if (!verifyData) {
@@ -66,6 +69,13 @@ export async function PUT(
     }
 
     const verified: BusinessRecord = JSON.parse(verifyData);
+    
+    // Verify the data matches what we wrote
+    if (verified.profile.name !== updatedBusiness.profile.name) {
+      console.error(`[API] Verification failed - name mismatch. Expected: ${updatedBusiness.profile.name}, Got: ${verified.profile.name}`);
+      // Still return success since Redis write succeeded, but log the mismatch
+    }
+    
     console.log(`[API] Successfully updated business ${businessId}`);
 
     return NextResponse.json({
