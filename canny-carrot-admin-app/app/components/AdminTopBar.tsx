@@ -69,8 +69,8 @@ export function AdminTopBar({
         <div 
           style={{
             flex: 1,
-            marginHorizontal: 0,
             marginLeft: 0,
+            marginRight: 0,
             maxWidth: '100%',
           }}
         >
