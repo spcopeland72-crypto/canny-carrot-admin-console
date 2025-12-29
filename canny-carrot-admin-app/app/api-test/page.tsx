@@ -133,7 +133,9 @@ export default function APITestPage() {
         const namesMatch = readBackName === testName;
         
         if (verifyResult.success && namesMatch) {
-          // Restore original name
+          // Restore original name (wait a bit before restore to ensure verification is complete)
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
           const restored = {
             ...testBusiness,
             profile: {
@@ -147,6 +149,9 @@ export default function APITestPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(restored),
           });
+          
+          // Wait a bit after restore to ensure it's committed
+          await new Promise(resolve => setTimeout(resolve, 150));
 
           addResult('Write Business', 'success', `Successfully wrote and verified business update. Original name restored.`, {
             originalName,
