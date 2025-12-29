@@ -57,23 +57,38 @@ export async function PUT(
     const businessData = JSON.stringify(updatedBusiness);
     
     console.log(`[API] Updating business ${businessId} in Redis via API server`);
+    console.log(`[API] Writing name: "${updatedBusiness.profile.name}"`);
     await redis.set(businessKey, businessData);
 
-    // Small delay to ensure Redis write propagates
-    await new Promise(resolve => setTimeout(resolve, 150));
-
-    // Verify the write succeeded by reading it back
-    const verifyData = await redis.get(businessKey);
-    if (!verifyData) {
-      throw new Error('Failed to verify business update - data not found after write');
+    // Retry verification with increasing delays to handle Redis propagation
+    let verifyData: string | null = null;
+    let verified: BusinessRecord | null = null;
+    const maxRetries = 5;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      const delay = 100 * attempt; // 100ms, 200ms, 300ms, 400ms, 500ms
+      await new Promise(resolve => setTimeout(resolve, delay));
+      
+      verifyData = await redis.get(businessKey);
+      if (verifyData) {
+        verified = JSON.parse(verifyData) as BusinessRecord;
+        console.log(`[API] Verification attempt ${attempt}: Read back name: "${verified.profile.name}"`);
+        
+        // If names match, verification succeeded
+        if (verified.profile.name === updatedBusiness.profile.name) {
+          console.log(`[API] ✅ Verification succeeded on attempt ${attempt}`);
+          break;
+        }
+      }
+      
+      if (attempt === maxRetries) {
+        console.error(`[API] ❌ Verification failed after ${maxRetries} attempts. Expected: "${updatedBusiness.profile.name}", Got: "${verified?.profile.name || 'null'}"`);
+        // Still return the verified data (even if it doesn't match) so caller can see what was actually written
+      }
     }
 
-    const verified: BusinessRecord = JSON.parse(verifyData);
-    
-    // Verify the data matches what we wrote
-    if (verified.profile.name !== updatedBusiness.profile.name) {
-      console.error(`[API] Verification failed - name mismatch. Expected: ${updatedBusiness.profile.name}, Got: ${verified.profile.name}`);
-      // Still return success since Redis write succeeded, but log the mismatch
+    if (!verifyData || !verified) {
+      throw new Error('Failed to verify business update - data not found after write');
     }
     
     console.log(`[API] Successfully updated business ${businessId}`);

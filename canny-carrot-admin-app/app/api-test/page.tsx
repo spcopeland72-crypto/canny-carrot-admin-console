@@ -201,7 +201,7 @@ export default function APITestPage() {
       // First get a list to find an ID
       const customers = await testReadCustomers();
       if (!customers || customers.length === 0) {
-        addResult('Read Single Customer', 'error', 'No customers available to test with. Note: This is expected if no customers have registered yet.', null);
+        addResult('Read Single Customer', 'error', 'No customers available to test with. Note: This is expected if no customers have registered yet. Use the website registration form to create a test customer first.', null);
         return null;
       }
 

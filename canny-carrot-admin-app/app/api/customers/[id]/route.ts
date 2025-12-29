@@ -57,23 +57,46 @@ export async function PUT(
     const customerDataStr = JSON.stringify(updatedCustomer);
     
     console.log(`[API] Updating customer ${customerId} in Redis via API server`);
+    if (updatedCustomer.profile.name) {
+      console.log(`[API] Writing name: "${updatedCustomer.profile.name}"`);
+    }
     await redis.set(customerKey, customerDataStr);
 
-    // Small delay to ensure Redis write propagates
-    await new Promise(resolve => setTimeout(resolve, 150));
-
-    // Verify the write succeeded by reading it back
-    const verifyData = await redis.get(customerKey);
-    if (!verifyData) {
-      throw new Error('Failed to verify customer update - data not found after write');
+    // Retry verification with increasing delays to handle Redis propagation
+    let verifyData: string | null = null;
+    let verified: CustomerRecord | null = null;
+    const maxRetries = 5;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      const delay = 100 * attempt; // 100ms, 200ms, 300ms, 400ms, 500ms
+      await new Promise(resolve => setTimeout(resolve, delay));
+      
+      verifyData = await redis.get(customerKey);
+      if (verifyData) {
+        verified = JSON.parse(verifyData) as CustomerRecord;
+        if (updatedCustomer.profile.name) {
+          console.log(`[API] Verification attempt ${attempt}: Read back name: "${verified.profile.name || 'undefined'}"`);
+          
+          // If names match, verification succeeded
+          if (verified.profile.name === updatedCustomer.profile.name) {
+            console.log(`[API] ✅ Verification succeeded on attempt ${attempt}`);
+            break;
+          }
+        } else {
+          // No name to verify, just check data exists
+          break;
+        }
+      }
+      
+      if (attempt === maxRetries) {
+        if (updatedCustomer.profile.name) {
+          console.error(`[API] ❌ Verification failed after ${maxRetries} attempts. Expected: "${updatedCustomer.profile.name}", Got: "${verified?.profile.name || 'undefined'}"`);
+        }
+      }
     }
 
-    const verified: CustomerRecord = JSON.parse(verifyData);
-    
-    // Verify the data matches what we wrote (if name was updated)
-    if (updatedCustomer.profile.name && verified.profile.name !== updatedCustomer.profile.name) {
-      console.error(`[API] Verification failed - name mismatch. Expected: ${updatedCustomer.profile.name}, Got: ${verified.profile.name || 'undefined'}`);
-      // Still return success since Redis write succeeded, but log the mismatch
+    if (!verifyData || !verified) {
+      throw new Error('Failed to verify customer update - data not found after write');
     }
     
     console.log(`[API] Successfully updated customer ${customerId}`);
