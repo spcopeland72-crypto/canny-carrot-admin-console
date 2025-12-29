@@ -65,9 +65,31 @@ export function AdminTopBar({
           />
         </div>
 
-        {/* Search - flex-1 to take remaining space, centered */}
-        <div className="flex-1 flex justify-center">
-          <div className="flex items-center bg-white border-2 border-[#dadce0] px-4 h-12 max-w-[720px] w-full" style={{ height: '48px' }}>
+        {/* Search - flex: 1 to take remaining space */}
+        <div 
+          style={{
+            flex: 1,
+            marginHorizontal: 0,
+            marginLeft: 0,
+            maxWidth: '100%',
+          }}
+        >
+          <div 
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: '#FFFFFF',
+              borderRadius: 0,
+              paddingLeft: '16px',
+              paddingRight: '16px',
+              borderWidth: '2px',
+              borderColor: '#dadce0',
+              flex: 1,
+              height: '48px',
+              maxWidth: '720px',
+            }}
+          >
             <Search className="w-5 h-5 text-[#5F6368] mr-3 flex-shrink-0" />
             <input
               type="text"
@@ -92,7 +114,17 @@ export function AdminTopBar({
         </div>
 
         {/* Right Actions */}
-        <div className="flex items-center flex-shrink-0 ml-4 gap-0">
+        <div 
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 0,
+            flex: 0,
+            justifyContent: 'flex-end',
+            marginLeft: '16px',
+          }}
+        >
           {/* Menu Icon */}
           <button
             className="p-3 rounded-full min-w-[40px] min-h-[40px] flex items-center justify-center hover:bg-gray-100 transition-colors"
