@@ -24,6 +24,8 @@ const getApiBaseUrl = (): string => {
 const API_BASE_URL = getApiBaseUrl();
 const REDIS_API_URL = `${API_BASE_URL}/api/v1/redis`;
 
+console.log('[Redis Service] Initialized:', { API_BASE_URL, REDIS_API_URL });
+
 console.log('[Redis Service] Final API_BASE_URL:', API_BASE_URL);
 console.log('[Redis Service] Final REDIS_API_URL:', REDIS_API_URL);
 
