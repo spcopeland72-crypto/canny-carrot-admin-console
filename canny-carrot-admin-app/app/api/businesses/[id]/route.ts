@@ -83,7 +83,8 @@ export async function PUT(
       
       if (attempt === maxRetries) {
         console.error(`[API] ❌ Verification failed after ${maxRetries} attempts. Expected: "${updatedBusiness.profile.name}", Got: "${verified?.profile.name || 'null'}"`);
-        // Still return the verified data (even if it doesn't match) so caller can see what was actually written
+        // Throw error - write verification failed
+        throw new Error(`Failed to verify business update after ${maxRetries} attempts. Expected name: "${updatedBusiness.profile.name}", but read back: "${verified?.profile.name || 'null'}". This indicates the Redis write may not have persisted correctly.`);
       }
     }
 
@@ -91,7 +92,12 @@ export async function PUT(
       throw new Error('Failed to verify business update - data not found after write');
     }
     
-    console.log(`[API] Successfully updated business ${businessId}`);
+    // Final check - verify name matches
+    if (verified.profile.name !== updatedBusiness.profile.name) {
+      throw new Error(`Business update verification failed. Expected name: "${updatedBusiness.profile.name}", but read back: "${verified.profile.name}". Redis write may not have persisted.`);
+    }
+    
+    console.log(`[API] Successfully updated business ${businessId} - verified name: "${verified.profile.name}"`);
 
     return NextResponse.json({
       success: true,

@@ -122,17 +122,23 @@ export default function APITestPage() {
       const result = await response.json();
 
       if (result.success) {
-        // Small delay to ensure Redis write propagates (slightly longer for reliability)
+        // The PUT response should already contain verified data
+        // Use that first, but also do a separate GET to double-check
+        const putResponseName = result.data?.profile?.name || 'N/A';
+        const putResponseMatches = putResponseName === testName;
+        
+        // Small delay before separate GET verification
         await new Promise(resolve => setTimeout(resolve, 200));
         
-        // Verify the write by reading it back
+        // Verify the write by reading it back with separate GET
         const verifyResponse = await fetch(`/api/businesses/${testBusiness.profile.id}`);
         const verifyResult = await verifyResponse.json();
         
         const readBackName = verifyResult.data?.profile?.name || 'N/A';
-        const namesMatch = readBackName === testName;
+        const getResponseMatches = readBackName === testName;
         
-        if (verifyResult.success && namesMatch) {
+        // Both PUT response and GET should match
+        if (putResponseMatches && getResponseMatches) {
           // Restore original name (wait a bit before restore to ensure verification is complete)
           await new Promise(resolve => setTimeout(resolve, 100));
           
@@ -160,9 +166,14 @@ export default function APITestPage() {
           });
           return true;
         } else {
-          addResult('Write Business', 'error', `Write succeeded but verification failed. Expected: "${testName}", Got: "${readBackName}"`, { 
+          const putMatch = putResponseMatches ? 'matched' : 'mismatched';
+          const getMatch = getResponseMatches ? 'matched' : 'mismatched';
+          addResult('Write Business', 'error', `Write succeeded but verification failed. Expected: "${testName}". PUT response: ${putResponseName} (${putMatch}), GET response: ${readBackName} (${getMatch})`, { 
             written: testName, 
+            putResponse: putResponseName,
             readBack: readBackName,
+            putResponseMatches,
+            getResponseMatches,
             fullResponse: verifyResult.data
           });
           return false;
