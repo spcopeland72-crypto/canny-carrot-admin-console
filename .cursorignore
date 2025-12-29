@@ -1,0 +1,197 @@
+# Cursor Indexing Exclusion
+# Optimized to keep workspace under 500MB while retaining full context
+# Excludes build artifacts, dependencies, media, and archives
+
+# ============================================
+# DEPENDENCIES & BUILD OUTPUTS (Largest savings)
+# ============================================
+# Node modules - massive and don't need indexing (~1.7GB)
+**/node_modules/
+node_modules/
+
+# Build outputs - regenerated on build (~500MB+)
+**/dist/
+**/build/
+**/.next/
+**/.expo/
+**/out/
+**/.turbo/
+**/.vercel/
+**/.cache/
+
+# Lock files - not needed for code context
+**/package-lock.json
+**/yarn.lock
+**/pnpm-lock.yaml
+
+# TypeScript build info
+**/tsconfig.tsbuildinfo
+
+# ============================================
+# ARCHIVES & BACKUPS (~2GB+)
+# ============================================
+# All archives
+**/*.zip
+**/*.tar.gz
+**/*.rar
+**/*.7z
+**/*.gz
+
+# Backup directories
+BUSINESS_APP_LATEST*/
+CUSTOMER_APP_LATEST*/
+canny-carrot-business-app-BACKUP*/
+canny-carrot-business-app-fresh/
+**/*BACKUP*/
+**/*backup*/
+**/*-BACKUP-*/
+
+# Legacy/design directories (keep code, exclude assets)
+canny-carrot-design-v1.2.1-full/
+canny-carrot-design-v1.2.1b-full/
+CannyCarrot_OfflineReady_v3.3_FullSuite/
+Canny-carrot-website/
+CC/
+New folder/
+rollback-v1.2.1a/
+
+# ============================================
+# MEDIA & ASSETS (~800MB)
+# ============================================
+# Images (keep only essential logo files via explicit includes)
+**/*.png
+**/*.jpeg
+**/*.jpg
+**/*.gif
+**/*.svg
+**/*.webp
+**/*.ico
+**/*.bmp
+
+# Videos
+**/*.mp4
+**/*.mov
+**/*.avi
+**/*.mkv
+**/*.webm
+**/*.flv
+
+# Audio
+**/*.mp3
+**/*.wav
+**/*.ogg
+**/*.m4a
+
+# Fonts (unless specifically needed)
+**/*.woff
+**/*.woff2
+**/*.ttf
+**/*.otf
+**/*.eot
+
+# ============================================
+# BINARY & COMPILED FILES (~1.5GB)
+# ============================================
+# Native modules
+**/*.node
+**/*.exe
+**/*.dll
+**/*.so
+**/*.dylib
+**/*.a
+**/*.lib
+**/*.aar
+
+# Source maps
+**/*.map
+
+# Git pack files
+**/*.pack
+
+# Compiled Python
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+
+# Java compiled
+**/*.class
+**/*.jar
+
+# ============================================
+# CACHE & TEMP FILES
+# ============================================
+**/.cache/
+**/.tmp/
+**/.temp/
+**/tmp/
+**/temp/
+**/.parcel-cache/
+**/.sass-cache/
+**/.vscode/
+**/.idea/
+
+# ============================================
+# OS & SYSTEM FILES
+# ============================================
+.DS_Store
+Thumbs.db
+desktop.ini
+**/.DS_Store
+**/Thumbs.db
+
+# ============================================
+# LOGS & DATA FILES
+# ============================================
+**/*.log
+**/logs/
+**/*.pst
+**/*.db
+**/*.sqlite
+**/*.sqlite3
+
+# ============================================
+# SPECIFIC LARGE DIRECTORIES
+# ============================================
+# Mesh router node_modules (broken symlinks)
+Cursor/mesh-router/node_modules/
+Cursor/mesh-router/**/node_modules/
+Cursor/mesh-router/packages/**/node_modules/
+
+# Exclude large subdirectories but keep source structure
+Signup-landing page/canny-carrot-landing-page/
+Signup-landing page/public/assets/
+Signup-landing page/.next/
+
+# ============================================
+# SELECTIVE INCLUSIONS (Override exclusions)
+# ============================================
+# Essential logos only
+!canny-carrot-admin-app/public/assets/logo.png
+!canny-carrot-admin-app/assets/logo.png
+!**/public/assets/logo.png
+
+# Keep active source code structure visible
+!canny-carrot-admin-app/src/
+!canny-carrot-admin-app/app/
+!canny-carrot-api/src/
+!canny-carrot-business-app/src/
+!canny-carrot-mobile-app/src/
+!Signup-landing page/src/
+!Cursor/aureon-cursor-prime/
+
+# Keep essential config files
+!**/package.json
+!**/tsconfig.json
+!**/.env.example
+!**/vercel.json
+!**/next.config.js
+!**/tailwind.config.ts
+
+# Keep essential documentation
+!README.md
+!**/README.md
+!WORKSPACE*.md
+!**/*DEPLOYMENT*.md
+!**/*SETUP*.md
+
