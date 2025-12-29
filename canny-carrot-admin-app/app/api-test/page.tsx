@@ -120,11 +120,17 @@ export default function APITestPage() {
       const result = await response.json();
 
       if (result.success) {
+        // Small delay to ensure Redis write propagates
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         // Verify the write by reading it back
         const verifyResponse = await fetch(`/api/businesses/${testBusiness.profile.id}`);
         const verifyResult = await verifyResponse.json();
         
-        if (verifyResult.success && verifyResult.data.profile.name === testName) {
+        const readBackName = verifyResult.data?.profile?.name || 'N/A';
+        const namesMatch = readBackName === testName;
+        
+        if (verifyResult.success && namesMatch) {
           // Restore original name
           const restored = {
             ...testBusiness,
@@ -143,11 +149,15 @@ export default function APITestPage() {
           addResult('Write Business', 'success', `Successfully wrote and verified business update. Original name restored.`, {
             originalName,
             testName,
-            verified: verifyResult.data.profile.name === testName
+            verified: true
           });
           return true;
         } else {
-          addResult('Write Business', 'error', 'Write succeeded but verification failed', { written: testName, readBack: verifyResult.data?.profile?.name });
+          addResult('Write Business', 'error', `Write succeeded but verification failed. Expected: "${testName}", Got: "${readBackName}"`, { 
+            written: testName, 
+            readBack: readBackName,
+            fullResponse: verifyResult.data
+          });
           return false;
         }
       } else {
