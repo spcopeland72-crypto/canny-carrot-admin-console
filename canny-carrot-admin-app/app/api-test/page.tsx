@@ -170,6 +170,132 @@ export default function APITestPage() {
     }
   };
 
+  const testReadCustomers = async () => {
+    try {
+      const response = await fetch('/api/customers');
+      const result = await response.json();
+      
+      if (result.success) {
+        const count = Array.isArray(result.data) ? result.data.length : 0;
+        addResult('Read Customers', 'success', `Successfully read ${count} customers`, { count, sample: result.data?.[0]?.profile?.name || 'N/A' });
+        return result.data;
+      } else {
+        addResult('Read Customers', 'error', result.error || 'Failed to read customers', result);
+        return null;
+      }
+    } catch (error: any) {
+      addResult('Read Customers', 'error', `Read failed: ${error.message}`, error);
+      return null;
+    }
+  };
+
+  const testReadSingleCustomer = async (customerId?: string) => {
+    try {
+      // First get a list to find an ID
+      const customers = await testReadCustomers();
+      if (!customers || customers.length === 0) {
+        addResult('Read Single Customer', 'error', 'No customers available to test with', null);
+        return null;
+      }
+
+      const testId = customerId || customers[0].profile.id;
+      const response = await fetch(`/api/customers/${testId}`);
+      const result = await response.json();
+      
+      if (result.success) {
+        addResult('Read Single Customer', 'success', `Successfully read customer: ${result.data.profile.name || result.data.profile.email || 'N/A'}`, { id: testId, name: result.data.profile.name, email: result.data.profile.email });
+        return result.data;
+      } else {
+        addResult('Read Single Customer', 'error', result.error || 'Failed to read customer', result);
+        return null;
+      }
+    } catch (error: any) {
+      addResult('Read Single Customer', 'error', `Read failed: ${error.message}`, error);
+      return null;
+    }
+  };
+
+  const testWriteCustomer = async () => {
+    try {
+      // First read to get an existing customer
+      const customers = await testReadCustomers();
+      if (!customers || customers.length === 0) {
+        addResult('Write Customer', 'error', 'No customers available to test write with', null);
+        return false;
+      }
+
+      const testCustomer = customers[0];
+      const originalName = testCustomer.profile.name || 'Test Customer';
+      const testName = `${originalName} [TEST ${Date.now()}]`;
+      
+      // Update the name
+      const updatedCustomer = {
+        ...testCustomer,
+        profile: {
+          ...testCustomer.profile,
+          name: testName
+        }
+      };
+
+      const response = await fetch(`/api/customers/${testCustomer.profile.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedCustomer),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Small delay to ensure Redis write propagates
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Verify the write by reading it back
+        const verifyResponse = await fetch(`/api/customers/${testCustomer.profile.id}`);
+        const verifyResult = await verifyResponse.json();
+        
+        const readBackName = verifyResult.data?.profile?.name || 'N/A';
+        const namesMatch = readBackName === testName;
+        
+        if (verifyResult.success && namesMatch) {
+          // Restore original name
+          const restored = {
+            ...testCustomer,
+            profile: {
+              ...testCustomer.profile,
+              name: originalName
+            }
+          };
+          
+          await fetch(`/api/customers/${testCustomer.profile.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(restored),
+          });
+
+          addResult('Write Customer', 'success', `Successfully wrote and verified customer update. Original name restored.`, {
+            originalName,
+            testName,
+            verified: true
+          });
+          return true;
+        } else {
+          addResult('Write Customer', 'error', `Write succeeded but verification failed. Expected: "${testName}", Got: "${readBackName}"`, { 
+            written: testName, 
+            readBack: readBackName,
+            fullResponse: verifyResult.data
+          });
+          return false;
+        }
+      } else {
+        addResult('Write Customer', 'error', result.error || 'Failed to write customer', result);
+        return false;
+      }
+    } catch (error: any) {
+      addResult('Write Customer', 'error', `Write failed: ${error.message}`, error);
+      return false;
+    }
+  };
+
   const testRedisDirect = async () => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.cannycarrot.com';
@@ -251,6 +377,15 @@ export default function APITestPage() {
     // Test 5: Write business
     await testWriteBusiness();
 
+    // Test 6: Read customers list
+    await testReadCustomers();
+
+    // Test 7: Read single customer
+    await testReadSingleCustomer();
+
+    // Test 8: Write customer
+    await testWriteCustomer();
+
     addResult('Test Suite', 'success', 'All tests completed');
     setIsRunning(false);
   };
@@ -302,14 +437,28 @@ export default function APITestPage() {
               disabled={isRunning}
               className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:bg-gray-400"
             >
-              Test Read
+              Read Businesses
             </button>
             <button
               onClick={testWriteBusiness}
               disabled={isRunning}
               className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:bg-gray-400"
             >
-              Test Write
+              Write Business
+            </button>
+            <button
+              onClick={testReadCustomers}
+              disabled={isRunning}
+              className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:bg-gray-400"
+            >
+              Read Customers
+            </button>
+            <button
+              onClick={testWriteCustomer}
+              disabled={isRunning}
+              className="px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700 disabled:bg-gray-400"
+            >
+              Write Customer
             </button>
             <button
               onClick={clearResults}
