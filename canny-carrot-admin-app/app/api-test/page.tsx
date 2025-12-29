@@ -99,7 +99,9 @@ export default function APITestPage() {
       }
 
       const testBusiness = businesses[0];
-      const originalName = testBusiness.profile.name;
+      // Remove any existing [TEST ...] suffixes to get clean original name
+      const cleanName = testBusiness.profile.name.replace(/\s*\[TEST\s+\d+\](\s*\[TEST\s+\d+\])*/g, '').trim();
+      const originalName = cleanName || testBusiness.profile.name;
       const testName = `${originalName} [TEST ${Date.now()}]`;
       
       // Update the name
@@ -194,7 +196,7 @@ export default function APITestPage() {
       // First get a list to find an ID
       const customers = await testReadCustomers();
       if (!customers || customers.length === 0) {
-        addResult('Read Single Customer', 'error', 'No customers available to test with', null);
+        addResult('Read Single Customer', 'error', 'No customers available to test with. Note: This is expected if no customers have registered yet.', null);
         return null;
       }
 
@@ -220,15 +222,18 @@ export default function APITestPage() {
       // First read to get an existing customer
       const customers = await testReadCustomers();
       if (!customers || customers.length === 0) {
-        addResult('Write Customer', 'error', 'No customers available to test write with', null);
+        addResult('Write Customer', 'error', 'No customers available to test write with. Note: This is expected if no customers have registered yet. Use the website registration form to create a test customer first.', null);
         return false;
       }
 
       const testCustomer = customers[0];
-      // Customers may not have name - use email as identifier
-      const originalName = testCustomer.profile.name || testCustomer.profile.email || 'Test Customer';
+      // Remove any existing [TEST ...] suffixes to get clean original name
+      const cleanName = testCustomer.profile.name 
+        ? testCustomer.profile.name.replace(/\s*\[TEST\s+\d+\](\s*\[TEST\s+\d+\])*/g, '').trim()
+        : null;
+      const originalName = cleanName || testCustomer.profile.name || testCustomer.profile.email || 'Test Customer';
       const testName = testCustomer.profile.name 
-        ? `${testCustomer.profile.name} [TEST ${Date.now()}]`
+        ? `${cleanName || testCustomer.profile.name} [TEST ${Date.now()}]`
         : `Test Customer [TEST ${Date.now()}]`;
       
       // Update the name (or add it if missing)
@@ -260,12 +265,14 @@ export default function APITestPage() {
         const namesMatch = readBackName === testName;
         
         if (verifyResult.success && namesMatch) {
-          // Restore original name
+          // Restore original name (wait a bit before restore to ensure write is complete)
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
           const restored = {
             ...testCustomer,
             profile: {
               ...testCustomer.profile,
-              name: originalName
+              name: originalName === testCustomer.profile.email ? undefined : originalName
             }
           };
           
@@ -275,7 +282,7 @@ export default function APITestPage() {
             body: JSON.stringify(restored),
           });
 
-          addResult('Write Customer', 'success', `Successfully wrote and verified customer update. Original name restored.`, {
+          addResult('Write Customer', 'success', `Successfully wrote and verified customer update. Original data restored.`, {
             originalName,
             testName,
             verified: true
