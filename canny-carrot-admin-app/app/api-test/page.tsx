@@ -127,11 +127,12 @@ export default function APITestPage() {
         const putResponseName = result.data?.profile?.name || 'N/A';
         const putResponseMatches = putResponseName === testName;
         
-        // Small delay before separate GET verification
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // Longer delay before separate GET verification to handle serverless propagation
+        await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Verify the write by reading it back with separate GET
-        const verifyResponse = await fetch(`/api/businesses/${testBusiness.profile.id}`);
+        // Verify the write by reading it back with separate GET (with cache-busting)
+        // Add timestamp to ensure fresh read from Redis
+        const verifyResponse = await fetch(`/api/businesses/${testBusiness.profile.id}?_verify=${Date.now()}`);
         const verifyResult = await verifyResponse.json();
         
         const readBackName = verifyResult.data?.profile?.name || 'N/A';
@@ -270,11 +271,12 @@ export default function APITestPage() {
       const result = await response.json();
 
       if (result.success) {
-        // Small delay to ensure Redis write propagates (slightly longer for reliability)
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // Longer delay before separate GET verification to handle serverless propagation
+        await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Verify the write by reading it back
-        const verifyResponse = await fetch(`/api/customers/${testCustomer.profile.id}`);
+        // Verify the write by reading it back with separate GET (with cache-busting)
+        // Add timestamp to ensure fresh read from Redis
+        const verifyResponse = await fetch(`/api/customers/${testCustomer.profile.id}?_verify=${Date.now()}`);
         const verifyResult = await verifyResponse.json();
         
         const readBackName = verifyResult.data?.profile?.name || verifyResult.data?.profile?.email || 'N/A';
