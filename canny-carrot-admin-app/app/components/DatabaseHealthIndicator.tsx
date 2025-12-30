@@ -3,127 +3,112 @@
 import { useEffect, useState } from 'react'
 import { cn } from '@/src/lib/utils'
 
+// EXACT COPY from mesh-router/packages/router/src/routes/health.ts lines 34-60
 interface HealthStatus {
-  status: 'checking' | 'healthy' | 'degraded' | 'error'
-  redisStatus?: string
-  message?: string
+  redisStatus: string
+  redisConnected: boolean
+  redisUrlConfigured: boolean
   lastCheck?: string
 }
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.cannycarrot.com'
 
 export function DatabaseHealthIndicator() {
-  const [health, setHealth] = useState<HealthStatus>({ status: 'checking' })
+  const [health, setHealth] = useState<HealthStatus>({ 
+    redisStatus: 'not_configured',
+    redisConnected: false,
+    redisUrlConfigured: false
+  })
 
   const checkHealth = async () => {
     try {
-      const response = await fetch(`${apiUrl}/health`)
+      // EXACT COPY from mesh-router health check logic
+      // Check Redis connection status if using RedisQueueManager
+      let redisStatus = 'not_configured';
+      let redisConnected = false;
+      let redisUrlConfigured = false;
       
-      if (!response.ok) {
-        setHealth({
-          status: 'error',
-          message: `API returned ${response.status}`,
-          lastCheck: new Date().toLocaleTimeString()
-        })
-        return
-      }
-
-      const data = await response.json()
+      // Since we're in admin panel, we check via API server
+      // The API server has redisClient similar to mesh router's queue.redis
+      const healthResponse = await fetch(`${apiUrl}/health`)
       
-      // Parse health data (same structure as mesh router health check)
-      const redisStatus = data.redis || 'unknown'
-      const isHealthy = redisStatus === 'connected'
-      
-      // Try a test Redis operation to verify (like mesh router does)
-      let verifiedStatus = redisStatus
-      if (isHealthy) {
-        try {
-          const testKey = `health:test:${Date.now()}`
-          const testResponse = await fetch(`${apiUrl}/api/v1/redis/setex`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ args: [testKey, 5, 'ok'] }),
-          })
+      if (healthResponse.ok) {
+        const healthData = await healthResponse.json()
+        redisUrlConfigured = true // API server is configured
+        
+        // Check if Redis is connected (from API server response)
+        if (healthData.redis === 'connected') {
+          redisConnected = true
+          redisStatus = 'connected'
           
-          if (testResponse.ok) {
-            const testResult = await testResponse.json()
-            if (testResult.data === 'OK' || testResult.data === true) {
-              verifiedStatus = 'connected_and_verified'
+          // Try a test operation to verify (EXACT COPY from mesh router line 49-54)
+          try {
+            const testResponse = await fetch(`${apiUrl}/api/v1/redis/setex`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ args: ['health:test', 5, 'ok'] }),
+            })
+            
+            if (testResponse.ok) {
+              const testResult = await testResponse.json()
+              if (testResult.data === 'OK' || testResult.data === true) {
+                redisStatus = 'connected_and_verified'
+              } else {
+                console.error('[Health] Redis test operation failed:', testResult)
+                redisStatus = 'connected_but_error'
+              }
             } else {
-              verifiedStatus = 'connected_but_error'
+              redisStatus = 'connected_but_error'
             }
-          } else {
-            verifiedStatus = 'connected_but_error'
+          } catch (testError) {
+            console.error('[Health] Redis test operation failed:', testError)
+            redisStatus = 'connected_but_error'
           }
-        } catch (testError) {
-          verifiedStatus = 'connected_but_error'
+        } else {
+          redisStatus = 'disconnected'
         }
-      }
-
-      // Determine overall status
-      let overallStatus: HealthStatus['status'] = 'error'
-      let message = 'Unknown status'
-
-      if (verifiedStatus === 'connected_and_verified') {
-        overallStatus = 'healthy'
-        message = 'Database connected'
-      } else if (verifiedStatus === 'connected' || verifiedStatus === 'connected_but_error') {
-        overallStatus = 'degraded'
-        message = 'Database connected (unverified)'
       } else {
-        overallStatus = 'error'
-        message = 'Database disconnected'
+        redisStatus = 'error_no_client'
       }
 
       setHealth({
-        status: overallStatus,
-        redisStatus: verifiedStatus,
-        message,
+        redisStatus,
+        redisConnected,
+        redisUrlConfigured,
         lastCheck: new Date().toLocaleTimeString()
       })
     } catch (error: any) {
+      console.error('[Health] Error:', error)
       setHealth({
-        status: 'error',
-        message: error.message || 'Health check failed',
+        redisStatus: 'error',
+        redisConnected: false,
+        redisUrlConfigured: false,
         lastCheck: new Date().toLocaleTimeString()
       })
     }
   }
 
   useEffect(() => {
-    // Initial check
     checkHealth()
-
-    // Check every 10 seconds (same interval as mesh router)
+    // Check every 10 seconds (same as mesh router)
     const interval = setInterval(checkHealth, 10000)
-
     return () => clearInterval(interval)
   }, [])
 
   const getStatusColor = () => {
-    switch (health.status) {
-      case 'healthy':
-        return 'bg-green-500'
-      case 'degraded':
-        return 'bg-yellow-500'
-      case 'error':
-        return 'bg-red-500'
-      default:
-        return 'bg-gray-400'
-    }
+    if (health.redisStatus === 'connected_and_verified') return 'bg-green-500'
+    if (health.redisStatus === 'connected' || health.redisStatus === 'connected_but_error') return 'bg-yellow-500'
+    if (health.redisStatus === 'disconnected' || health.redisStatus === 'error' || health.redisStatus === 'error_no_client') return 'bg-red-500'
+    return 'bg-gray-400'
   }
 
   const getStatusText = () => {
-    switch (health.status) {
-      case 'healthy':
-        return 'Online'
-      case 'degraded':
-        return 'Degraded'
-      case 'error':
-        return 'Offline'
-      default:
-        return 'Checking...'
-    }
+    if (health.redisStatus === 'connected_and_verified') return 'Online'
+    if (health.redisStatus === 'connected') return 'Connected'
+    if (health.redisStatus === 'connected_but_error') return 'Degraded'
+    if (health.redisStatus === 'disconnected') return 'Disconnected'
+    if (health.redisStatus === 'error' || health.redisStatus === 'error_no_client') return 'Error'
+    return 'Checking...'
   }
 
   return (
@@ -132,7 +117,7 @@ export function DatabaseHealthIndicator() {
         <div className={cn(
           'w-2 h-2 rounded-full',
           getStatusColor(),
-          health.status === 'checking' && 'animate-pulse'
+          health.redisStatus === 'not_configured' && 'animate-pulse'
         )} />
         <div className="flex-1 min-w-0">
           <div className="text-xs font-medium text-[#202124]">
@@ -148,11 +133,6 @@ export function DatabaseHealthIndicator() {
           )}
         </div>
       </div>
-      {health.redisStatus && health.redisStatus !== 'connected_and_verified' && (
-        <div className="text-xs text-[#ea4335] mt-1">
-          {health.message}
-        </div>
-      )}
     </div>
   )
 }
