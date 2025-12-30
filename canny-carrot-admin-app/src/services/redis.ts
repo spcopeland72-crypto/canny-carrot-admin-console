@@ -10,10 +10,18 @@ import Redis from 'ioredis';
 
 // Get Redis URL from environment (only when needed, not at module load)
 const getRedisUrl = (): string => {
+  // During build, Next.js might call this - return empty string to avoid errors
+  // Only check and throw at actual runtime when a request is made
+  if (typeof process === 'undefined' || !process.env) {
+    return '';
+  }
+  
   const redisUrl = process.env.REDIS_URL || '';
   if (!redisUrl) {
-    // Don't throw during build - only throw at runtime when actually using Redis
-    if (process.env.NODE_ENV === 'production' && typeof window === 'undefined') {
+    // Only throw if we're actually in a runtime environment (not build)
+    // Check if we're in a serverless function context (Vercel sets these)
+    const isRuntime = process.env.VERCEL || process.env.NEXT_RUNTIME || (typeof window === 'undefined' && process.env.NODE_ENV === 'production');
+    if (isRuntime) {
       throw new Error('REDIS_URL environment variable is required for admin console');
     }
     // Return empty string during build to avoid connection attempt
@@ -406,4 +414,4 @@ export const REDIS_KEYS = {
   actionLog: () => 'admin:actionLog', // Prefix for action log entries
 };
 
-export default redisClient;
+export default getRedisClient;
