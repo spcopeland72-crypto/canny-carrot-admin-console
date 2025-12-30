@@ -16,6 +16,7 @@ import {
   ArchiveIcon, 
   TrashIcon 
 } from './AdminSidebarIcons'
+import { DatabaseHealthIndicator } from './DatabaseHealthIndicator'
 import type { ViewType } from './AdminLayout'
 
 interface AdminSidebarProps {
@@ -165,6 +166,11 @@ export function AdminSidebar({
               )}
             </nav>
           </ScrollArea>
+        )}
+
+        {/* Database Health Indicator - Bottom Left */}
+        {!sidebarCollapsed && (
+          <DatabaseHealthIndicator />
         )}
       </aside>
     </>
