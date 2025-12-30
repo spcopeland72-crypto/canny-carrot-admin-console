@@ -127,12 +127,8 @@ export default function APITestPage() {
         const putResponseName = result.data?.profile?.name || 'N/A';
         const putResponseMatches = putResponseName === testName;
         
-        // Longer delay before separate GET verification to handle serverless propagation
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Verify the write by reading it back with separate GET (with cache-busting)
-        // Add timestamp to ensure fresh read from Redis
-        const verifyResponse = await fetch(`/api/businesses/${testBusiness.profile.id}?_verify=${Date.now()}`);
+        // Verify the write by reading it back with separate GET
+        const verifyResponse = await fetch(`/api/businesses/${testBusiness.profile.id}`);
         const verifyResult = await verifyResponse.json();
         
         const readBackName = verifyResult.data?.profile?.name || 'N/A';
@@ -271,12 +267,8 @@ export default function APITestPage() {
       const result = await response.json();
 
       if (result.success) {
-        // Longer delay before separate GET verification to handle serverless propagation
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Verify the write by reading it back with separate GET (with cache-busting)
-        // Add timestamp to ensure fresh read from Redis
-        const verifyResponse = await fetch(`/api/customers/${testCustomer.profile.id}?_verify=${Date.now()}`);
+        // Verify the write by reading it back with separate GET
+        const verifyResponse = await fetch(`/api/customers/${testCustomer.profile.id}`);
         const verifyResult = await verifyResponse.json();
         
         const readBackName = verifyResult.data?.profile?.name || verifyResult.data?.profile?.email || 'N/A';
