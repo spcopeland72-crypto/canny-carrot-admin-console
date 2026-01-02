@@ -65,6 +65,10 @@ export default function Home() {
 
   // Data is ready to render directly - same approach as dump page
 
+  const handleViewChange = (view: ViewType) => {
+    setCurrentView(view);
+  };
+
   const handleRefresh = () => {
     console.log('[Admin] Refresh button clicked');
     const loadData = async () => {
@@ -121,7 +125,7 @@ export default function Home() {
   return (
     <AdminLayout
       currentView={currentView}
-      onViewChange={(view) => setCurrentView(view)}
+      onViewChange={handleViewChange}
       membersCount={businesses.length}
       searchQuery={searchQuery}
       onSearchChange={setSearchQuery}
