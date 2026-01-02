@@ -211,7 +211,19 @@ export const businessData = {
       };
 
       // Commit to Redis
+      console.log(`[businessData.update] Updating business ${id} in Redis`);
       await redis.set(REDIS_KEYS.business(id), JSON.stringify(updated));
+      
+      // VERIFY: Read back to confirm it was saved
+      const verified = await redis.get(REDIS_KEYS.business(id));
+      if (!verified) {
+        throw new Error(`CRITICAL: Business update not verified - data not found in Redis after write`);
+      }
+      const verifiedBusiness = JSON.parse(verified);
+      if (verifiedBusiness.profile.id !== id) {
+        throw new Error(`CRITICAL: Business ID mismatch after update - expected ${id}, got ${verifiedBusiness.profile.id}`);
+      }
+      console.log(`[businessData.update] ✅ VERIFIED: Business update saved to Redis: ${id}`);
       
       // Update email index if email changed
       if (formData.email && formData.email !== existing.profile.email) {
@@ -528,7 +540,19 @@ export const customerData = {
       };
 
       // Commit to Redis
+      console.log(`[customerData.update] Updating customer ${id} in Redis`);
       await redis.set(REDIS_KEYS.customer(id), JSON.stringify(updated));
+      
+      // VERIFY: Read back to confirm it was saved
+      const verified = await redis.get(REDIS_KEYS.customer(id));
+      if (!verified) {
+        throw new Error(`CRITICAL: Customer update not verified - data not found in Redis after write`);
+      }
+      const verifiedCustomer = JSON.parse(verified);
+      if (verifiedCustomer.profile.id !== id) {
+        throw new Error(`CRITICAL: Customer ID mismatch after update - expected ${id}, got ${verifiedCustomer.profile.id}`);
+      }
+      console.log(`[customerData.update] ✅ VERIFIED: Customer update saved to Redis: ${id}`);
       
       // Update email index if email changed
       if (formData.email && formData.email !== existing.profile.email) {

@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import type { BusinessRecord, CustomerRecord } from '@/src/types';
-import AdminLayout, { type ViewType } from './components/AdminLayout';
-import { EmailList } from './components/EmailList';
+import AdminLayout from '@/app/components/AdminLayout';
+import { EmailList } from '@/src/components/EmailList';
 import { EmailToolbar } from './components/EmailToolbar';
 
+type ViewType = 'Members' | 'Customers' | 'Apps' | 'Website' | 'Drafts' | 'Archive' | 'Trash';
+
 export default function Home() {
-  const router = useRouter();
   const [currentView, setCurrentView] = useState<ViewType>('Members');
   const [businesses, setBusinesses] = useState<BusinessRecord[]>([]);
   const [customers, setCustomers] = useState<CustomerRecord[]>([]);
@@ -112,7 +112,6 @@ export default function Home() {
       searchQuery={searchQuery}
       onSearchChange={setSearchQuery}
       onRefresh={handleRefresh}
-      totalCount={listItems.length}
     >
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 m-4 rounded">
@@ -138,11 +137,8 @@ export default function Home() {
               : 'No customers found'
           }
           onItemPress={(item) => {
-            if (currentView === 'Members') {
-              router.push(`/businesses/${item.id}`);
-            } else if (currentView === 'Customers') {
-              router.push(`/customers/${item.id}`);
-            }
+            // TODO: Open detail view
+            console.log('Item pressed:', item);
           }}
         />
       )}

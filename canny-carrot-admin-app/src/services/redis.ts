@@ -1,189 +1,94 @@
 /**
  * Redis Client Service - Admin App
  * 
- * Direct Redis connection - Admin console accesses database independently
- * Admin console sits on one side viewing the database in the background
- * Does NOT go through API server - completely separate path
+ * Production Redis client using Canny Carrot API as proxy
+ * All operations go through the API to Redis database
  */
 
-import Redis from 'ioredis';
-
-// Get Redis URL from environment (only when needed, not at module load)
-const getRedisUrl = (): string => {
-  // During build, Next.js might call this - return empty string to avoid errors
-  // Only check and throw at actual runtime when a request is made
-  if (typeof process === 'undefined' || !process.env) {
-    return '';
+// Get API base URL (Next.js environment)
+const getApiBaseUrl = (): string => {
+  // Next.js server-side: use server environment variable
+  if (typeof window === 'undefined') {
+    const serverUrl = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'https://api.cannycarrot.com';
+    console.log('[Redis Service] Server-side - Using API URL:', serverUrl);
+    return serverUrl;
   }
   
-  const redisUrl = process.env.REDIS_URL || '';
-  if (!redisUrl) {
-    // Only throw if we're actually in a runtime environment (not build)
-    // Check if we're in a serverless function context (Vercel sets these)
-    const isRuntime = process.env.VERCEL || process.env.NEXT_RUNTIME || (typeof window === 'undefined' && process.env.NODE_ENV === 'production');
-    if (isRuntime) {
-      throw new Error('REDIS_URL environment variable is required for admin console');
-    }
-    // Return empty string during build to avoid connection attempt
-    return '';
-  }
-  return redisUrl;
+  // Next.js client-side: use public environment variable
+  const clientUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.cannycarrot.com';
+  console.log('[Redis Service] Client-side - Using API URL:', clientUrl);
+  return clientUrl;
 };
 
-// Lazy initialization - only create client when needed (not during build)
-let redisClientInstance: Redis | null = null;
+const API_BASE_URL = getApiBaseUrl();
+const REDIS_API_URL = `${API_BASE_URL}/api/v1/redis`;
 
-const createRedisClient = (): Redis => {
-  if (redisClientInstance) {
-    return redisClientInstance;
-  }
-
-  const redisUrl = getRedisUrl();
-  if (!redisUrl) {
-    throw new Error('REDIS_URL environment variable is required for admin console');
-  }
-
-  // Create Redis client with serverless-optimized settings (same as API server)
-  const isVercel = process.env.VERCEL === '1';
-  redisClientInstance = new Redis(redisUrl, {
-    maxRetriesPerRequest: 3,
-    retryStrategy: (times: number) => {
-      const delay = Math.min(times * 50, 2000);
-      return delay;
-    },
-    lazyConnect: true,
-    // Serverless-optimized settings
-    connectTimeout: 10000, // 10 seconds
-    commandTimeout: 5000, // 5 seconds
-    enableReadyCheck: false, // Skip ready check to avoid timeout issues
-    enableOfflineQueue: false, // Don't queue commands when offline
-    keepAlive: 30000, // 30 seconds keepalive
-    // For Vercel: don't auto-reconnect aggressively (serverless functions are ephemeral)
-    ...(isVercel ? {
-      enableOfflineQueue: false,
-      maxRetriesPerRequest: 1, // Faster failures on Vercel
-    } : {}),
-  });
-
-  return redisClientInstance;
-};
-
-// Export client getter function - client is created lazily only when needed
-export const getRedisClient = (): Redis => {
-  return createRedisClient();
-};
-
-// For backward compatibility if needed elsewhere
-export { createRedisClient as redisClient };
-
-// Track connection state
-let connectionPromise: Promise<void> | null = null;
-let isConnected = false;
-
-// Connection handler - lazy connection for serverless (same as API server)
-export const connectRedis = async (): Promise<void> => {
-  const client = createRedisClient();
-  
-  // If already connected, return immediately
-  if (isConnected && client.status === 'ready') {
-    return Promise.resolve();
-  }
-  
-  // If already connecting, return existing promise
-  if (connectionPromise) {
-    return connectionPromise;
-  }
-
-  connectionPromise = new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      connectionPromise = null;
-      reject(new Error('Redis connection timeout after 10 seconds'));
-    }, 10000);
-
-    const onConnect = () => {
-      console.log('[Admin Redis] 📡 Connecting to Redis...');
-    };
-
-    const onReady = () => {
-      clearTimeout(timeout);
-      isConnected = true;
-      console.log('[Admin Redis] ✅ Redis connection ready');
-      cleanup();
-      resolve();
-    };
-
-    const onError = (err: Error) => {
-      clearTimeout(timeout);
-      connectionPromise = null;
-      isConnected = false;
-      console.error('[Admin Redis] ❌ Redis connection error:', err.message);
-      cleanup();
-      reject(err);
-    };
-
-    const cleanup = () => {
-      client.removeListener('connect', onConnect);
-      client.removeListener('ready', onReady);
-      client.removeListener('error', onError);
-    };
-
-    client.once('connect', onConnect);
-    client.once('ready', onReady);
-    client.once('error', onError);
-
-    // Only connect if not already connecting/connected
-    const status = client.status;
-    if (status === 'end' || status === 'close' || status === 'wait') {
-      client.connect().catch((err) => {
-        clearTimeout(timeout);
-        connectionPromise = null;
-        cleanup();
-        reject(err);
-      });
-    } else if (status === 'ready') {
-      clearTimeout(timeout);
-      isConnected = true;
-      cleanup();
-      resolve();
-    } else {
-      // Already connecting
-      console.log('[Admin Redis] ⏳ Redis connection in progress...');
-    }
-  });
-
-  return connectionPromise;
-};
-
-// Ensure connection before operations
-const ensureConnected = async (): Promise<void> => {
-  // Create client first (lazy initialization)
-  createRedisClient();
-  
-  try {
-    await connectRedis();
-  } catch (error: any) {
-    console.error('[Admin Redis] Failed to connect to Redis:', error.message);
-    throw error;
-  }
-};
+console.log('[Redis Service] Final API_BASE_URL:', API_BASE_URL);
+console.log('[Redis Service] Final REDIS_API_URL:', REDIS_API_URL);
 
 /**
- * Check if Redis is available
+ * Check if API/Redis is available
  */
 export const isRedisAvailable = async (): Promise<boolean> => {
   try {
-    const client = createRedisClient();
-    await ensureConnected();
-    const result = await client.ping();
-    return result === 'PONG';
+    const response = await fetch(`${API_BASE_URL}/health`);
+    if (!response.ok) return false;
+    const data = await response.json();
+    return data.redis === 'connected';
   } catch {
     return false;
   }
 };
 
 /**
- * Direct Redis Operations
- * All operations go directly to Redis database - independent of API server
+ * Check if device is online
+ */
+export const isOnline = (): boolean => {
+  if (typeof window !== 'undefined' && typeof navigator !== 'undefined') {
+    return navigator.onLine;
+  }
+  return true;
+};
+
+/**
+ * Execute Redis command via HTTP API
+ */
+const executeCommand = async (
+  command: string,
+  ...args: any[]
+): Promise<any> => {
+  if (!isOnline()) {
+    throw new Error('Device is offline');
+  }
+
+  const commandUrl = `${REDIS_API_URL}/${command}`;
+  console.log(`[Redis Service] Executing command: ${command}`, { url: commandUrl, args: args.length > 2 ? args.slice(0, 2) : args });
+
+  try {
+    const response = await fetch(commandUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ args }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[Redis Service] Command ${command} failed:`, { status: response.status, statusText: response.statusText, error: errorText });
+      throw new Error(`Redis API error (${response.status}): ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log(`[Redis Service] Command ${command} succeeded:`, { hasData: result.data !== undefined, resultType: typeof result.data, resultPreview: Array.isArray(result.data) ? result.data.slice(0, 3) : result.data });
+    return result.data !== undefined ? result.data : result;
+  } catch (error: any) {
+    console.error(`[Redis Service] Redis command ${command} failed:`, { error: error.message, url: commandUrl, stack: error.stack });
+    throw error;
+  }
+};
+
+/**
+ * Production Redis Operations
+ * All operations commit to Redis database via API
  */
 export const redis = {
   /**
@@ -191,11 +96,9 @@ export const redis = {
    */
   get: async (key: string): Promise<string | null> => {
     try {
-      const client = createRedisClient();
-      await ensureConnected();
-      return await client.get(key);
+      return await executeCommand('get', key);
     } catch (error) {
-      console.error(`[Admin Redis] GET failed for ${key}:`, error);
+      console.error(`Redis GET failed for ${key}:`, error);
       throw error;
     }
   },
@@ -205,16 +108,14 @@ export const redis = {
    */
   set: async (key: string, value: string, expiry?: number): Promise<boolean> => {
     try {
-      const client = createRedisClient();
-      await ensureConnected();
       if (expiry) {
-        await client.setex(key, expiry, value);
+        await executeCommand('setex', key, expiry, value);
       } else {
-        await client.set(key, value);
+        await executeCommand('set', key, value);
       }
       return true;
     } catch (error) {
-      console.error(`[Admin Redis] SET failed for ${key}:`, error);
+      console.error(`Redis SET failed for ${key}:`, error);
       throw error;
     }
   },
@@ -224,12 +125,10 @@ export const redis = {
    */
   del: async (key: string): Promise<boolean> => {
     try {
-      const client = createRedisClient();
-      await ensureConnected();
-      await client.del(key);
+      await executeCommand('del', key);
       return true;
     } catch (error) {
-      console.error(`[Admin Redis] DEL failed for ${key}:`, error);
+      console.error(`Redis DEL failed for ${key}:`, error);
       throw error;
     }
   },
@@ -239,11 +138,9 @@ export const redis = {
    */
   keys: async (pattern: string): Promise<string[]> => {
     try {
-      const client = createRedisClient();
-      await ensureConnected();
-      return await client.keys(pattern);
+      return await executeCommand('keys', pattern);
     } catch (error) {
-      console.error(`[Admin Redis] KEYS failed for ${pattern}:`, error);
+      console.error(`Redis KEYS failed for ${pattern}:`, error);
       return [];
     }
   },
@@ -253,11 +150,9 @@ export const redis = {
    */
   sadd: async (key: string, ...members: string[]): Promise<number> => {
     try {
-      const client = createRedisClient();
-      await ensureConnected();
-      return await client.sadd(key, ...members);
+      return await executeCommand('sadd', key, ...members);
     } catch (error) {
-      console.error(`[Admin Redis] SADD failed for ${key}:`, error);
+      console.error(`Redis SADD failed for ${key}:`, error);
       throw error;
     }
   },
@@ -267,11 +162,9 @@ export const redis = {
    */
   smembers: async (key: string): Promise<string[]> => {
     try {
-      const client = createRedisClient();
-      await ensureConnected();
-      return await client.smembers(key);
+      return await executeCommand('smembers', key);
     } catch (error) {
-      console.error(`[Admin Redis] SMEMBERS failed for ${key}:`, error);
+      console.error(`Redis SMEMBERS failed for ${key}:`, error);
       return [];
     }
   },
@@ -281,11 +174,9 @@ export const redis = {
    */
   srem: async (key: string, ...members: string[]): Promise<number> => {
     try {
-      const client = createRedisClient();
-      await ensureConnected();
-      return await client.srem(key, ...members);
+      return await executeCommand('srem', key, ...members);
     } catch (error) {
-      console.error(`[Admin Redis] SREM failed for ${key}:`, error);
+      console.error(`Redis SREM failed for ${key}:`, error);
       throw error;
     }
   },
@@ -295,12 +186,10 @@ export const redis = {
    */
   exists: async (key: string): Promise<boolean> => {
     try {
-      const client = createRedisClient();
-      await ensureConnected();
-      const result = await client.exists(key);
+      const result = await executeCommand('exists', key);
       return result === 1;
     } catch (error) {
-      console.error(`[Admin Redis] EXISTS failed for ${key}:`, error);
+      console.error(`Redis EXISTS failed for ${key}:`, error);
       return false;
     }
   },
@@ -310,12 +199,10 @@ export const redis = {
    */
   mget: async (keys: string[]): Promise<(string | null)[]> => {
     try {
-      const client = createRedisClient();
-      await ensureConnected();
       if (keys.length === 0) return [];
-      return await client.mget(...keys);
+      return await executeCommand('mget', ...keys);
     } catch (error) {
-      console.error(`[Admin Redis] MGET failed:`, error);
+      console.error(`Redis MGET failed:`, error);
       return keys.map(() => null);
     }
   },
@@ -325,16 +212,14 @@ export const redis = {
    */
   mset: async (keyValues: Record<string, string>): Promise<boolean> => {
     try {
-      const client = createRedisClient();
-      await ensureConnected();
-      const args: string[] = [];
+      const args: any[] = [];
       for (const [key, value] of Object.entries(keyValues)) {
         args.push(key, value);
       }
-      await client.mset(...args);
+      await executeCommand('mset', ...args);
       return true;
     } catch (error) {
-      console.error(`[Admin Redis] MSET failed:`, error);
+      console.error(`Redis MSET failed:`, error);
       throw error;
     }
   },
@@ -344,46 +229,46 @@ export const redis = {
    */
   hget: async (key: string, field: string): Promise<string | null> => {
     try {
-      const client = createRedisClient();
-      await ensureConnected();
-      return await client.hget(key, field);
+      return await executeCommand('hget', key, field);
     } catch (error) {
-      console.error(`[Admin Redis] HGET failed for ${key}.${field}:`, error);
+      console.error(`Redis HGET failed for ${key}.${field}:`, error);
       return null;
     }
   },
 
   hset: async (key: string, field: string, value: string): Promise<boolean> => {
     try {
-      const client = createRedisClient();
-      await ensureConnected();
-      await client.hset(key, field, value);
+      await executeCommand('hset', key, field, value);
       return true;
     } catch (error) {
-      console.error(`[Admin Redis] HSET failed for ${key}.${field}:`, error);
+      console.error(`Redis HSET failed for ${key}.${field}:`, error);
       throw error;
     }
   },
 
   hgetall: async (key: string): Promise<Record<string, string>> => {
     try {
-      const client = createRedisClient();
-      await ensureConnected();
-      const result = await client.hgetall(key);
+      const result = await executeCommand('hgetall', key);
+      // Convert array [key1, val1, key2, val2] to object
+      if (Array.isArray(result)) {
+        const obj: Record<string, string> = {};
+        for (let i = 0; i < result.length; i += 2) {
+          obj[result[i]] = result[i + 1];
+        }
+        return obj;
+      }
       return result || {};
     } catch (error) {
-      console.error(`[Admin Redis] HGETALL failed for ${key}:`, error);
+      console.error(`Redis HGETALL failed for ${key}:`, error);
       return {};
     }
   },
 
   hdel: async (key: string, ...fields: string[]): Promise<number> => {
     try {
-      const client = createRedisClient();
-      await ensureConnected();
-      return await client.hdel(key, ...fields);
+      return await executeCommand('hdel', key, ...fields);
     } catch (error) {
-      console.error(`[Admin Redis] HDEL failed for ${key}:`, error);
+      console.error(`Redis HDEL failed for ${key}:`, error);
       throw error;
     }
   },
@@ -414,4 +299,5 @@ export const REDIS_KEYS = {
   actionLog: () => 'admin:actionLog', // Prefix for action log entries
 };
 
-export default getRedisClient;
+export default redis;
+

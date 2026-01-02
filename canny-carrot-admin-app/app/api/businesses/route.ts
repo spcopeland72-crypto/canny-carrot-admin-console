@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { businessData } from '@/src/services/dataAccess';
+import type { BusinessFormData } from '@/src/types';
 
 export async function GET() {
   try {
@@ -7,6 +8,23 @@ export async function GET() {
     return NextResponse.json({ success: true, data: businesses });
   } catch (error: any) {
     console.error('[API] Error fetching businesses:', error);
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const formData: BusinessFormData = await request.json();
+    console.log('[API] Creating new business:', formData);
+    
+    const newBusiness = await businessData.create(formData);
+    console.log('[API] ✅ Business created successfully:', newBusiness.profile.id);
+    return NextResponse.json({ success: true, data: newBusiness }, { status: 201 });
+  } catch (error: any) {
+    console.error('[API] Error creating business:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
