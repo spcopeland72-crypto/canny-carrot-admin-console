@@ -58,18 +58,33 @@ export const EmailList: React.FC<EmailListProps> = ({
     );
   }
 
+  const handleItemClick = (item: ListItem, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onItemPress?.(item);
+  };
+
   return (
     <div className="flex-1">
       {items.map((item) => (
         <div
           key={item.id}
-          onClick={() => onItemPress?.(item)}
+          onClick={(e) => handleItemClick(item, e)}
+          onMouseDown={(e) => handleItemClick(item, e)}
           className="flex items-center px-4 py-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50 bg-white"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onItemPress?.(item);
+            }
+          }}
         >
-          <div className="w-10 flex items-center justify-center flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-            <input type="checkbox" className="w-4 h-4" />
+          <div className="w-10 flex items-center justify-center flex-shrink-0" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+            <input type="checkbox" className="w-4 h-4" onClick={(e) => e.stopPropagation()} />
           </div>
-          <div className="w-10 flex items-center justify-center flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+          <div className="w-10 flex items-center justify-center flex-shrink-0" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
             <span className="text-xl text-gray-600">{item.isStarred ? '★' : '☆'}</span>
           </div>
           <div className="flex-1 min-w-0 px-4">
