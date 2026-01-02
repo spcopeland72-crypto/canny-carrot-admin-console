@@ -1,20 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import type { BusinessRecord, CustomerRecord } from '@/src/types';
 import AdminLayout, { type ViewType } from './components/AdminLayout';
 import { EmailList } from './components/EmailList';
 import { EmailToolbar } from './components/EmailToolbar';
+import { RecordDetailPane } from './components/RecordDetailPane';
 
 export default function Home() {
-  const router = useRouter();
   const [currentView, setCurrentView] = useState<ViewType>('Members');
   const [businesses, setBusinesses] = useState<BusinessRecord[]>([]);
   const [customers, setCustomers] = useState<CustomerRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedRecord, setSelectedRecord] = useState<BusinessRecord | CustomerRecord | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -47,6 +47,11 @@ export default function Home() {
     };
     
     loadData();
+  }, [currentView]);
+
+  // Reset selected record when view changes
+  useEffect(() => {
+    setSelectedRecord(null);
   }, [currentView]);
 
   // Filter data based on search query
@@ -120,31 +125,40 @@ export default function Home() {
         </div>
       )}
 
-      <EmailToolbar
-        onRefresh={handleRefresh}
-        totalCount={listItems.length}
-      />
-
-      {isLoading ? (
-        <div className="flex-1 flex items-center justify-center py-12">
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      ) : (
-        <EmailList
-          items={listItems}
-          emptyMessage={
-            currentView === 'Members'
-              ? 'No businesses found'
-              : 'No customers found'
-          }
-          onItemPress={(item) => {
-            if (currentView === 'Members') {
-              router.push(`/members/${item.id}`);
-            } else if (currentView === 'Customers') {
-              router.push(`/customers/${item.id}`);
-            }
-          }}
+      {selectedRecord ? (
+        <RecordDetailPane
+          record={selectedRecord}
+          type={currentView === 'Members' ? 'member' : 'customer'}
+          onBack={() => setSelectedRecord(null)}
         />
+      ) : (
+        <>
+          <EmailToolbar
+            onRefresh={handleRefresh}
+            totalCount={listItems.length}
+          />
+
+          {isLoading ? (
+            <div className="flex-1 flex items-center justify-center py-12">
+              <p className="text-gray-600">Loading...</p>
+            </div>
+          ) : (
+            <EmailList
+              items={listItems}
+              emptyMessage={
+                currentView === 'Members'
+                  ? 'No businesses found'
+                  : 'No customers found'
+              }
+              onItemPress={(item) => {
+                const record = filteredData.find(r => r.profile.id === item.id);
+                if (record) {
+                  setSelectedRecord(record);
+                }
+              }}
+            />
+          )}
+        </>
       )}
     </AdminLayout>
   );
