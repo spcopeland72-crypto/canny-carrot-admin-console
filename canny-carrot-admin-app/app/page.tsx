@@ -107,6 +107,7 @@ export default function Home() {
       currentView={currentView}
       onViewChange={(view) => setCurrentView(view)}
       membersCount={businesses.length}
+      customersCount={customers.length}
       searchQuery={searchQuery}
       onSearchChange={setSearchQuery}
       onRefresh={handleRefresh}

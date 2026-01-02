@@ -9,6 +9,7 @@ interface AdminLayoutProps {
   currentView: ViewType;
   onViewChange: (view: ViewType) => void;
   membersCount: number;
+  customersCount: number;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onRefresh: () => void;
@@ -31,6 +32,7 @@ export default function AdminLayout({
   currentView,
   onViewChange,
   membersCount,
+  customersCount,
   searchQuery,
   onSearchChange,
   onRefresh,
@@ -70,6 +72,9 @@ export default function AdminLayout({
               <span>{item.label}</span>
               {item.view === 'Members' && (
                 <span className="ml-auto text-sm text-gray-500">({membersCount})</span>
+              )}
+              {item.view === 'Customers' && (
+                <span className="ml-auto text-sm text-gray-500">({customersCount})</span>
               )}
             </button>
           ))}
