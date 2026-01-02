@@ -64,14 +64,12 @@ export const EmailList: React.FC<EmailListProps> = ({
         <div
           key={item.id}
           onClick={() => onItemPress?.(item)}
-          className={`flex items-center px-4 py-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50 ${
-            item.isRead ? 'bg-gray-50' : 'bg-white'
-          }`}
+          className="flex items-center px-4 py-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50 bg-white"
         >
-          <div className="w-10 flex items-center justify-center flex-shrink-0">
+          <div className="w-10 flex items-center justify-center flex-shrink-0" onClick={(e) => e.stopPropagation()}>
             <input type="checkbox" className="w-4 h-4" />
           </div>
-          <div className="w-10 flex items-center justify-center flex-shrink-0">
+          <div className="w-10 flex items-center justify-center flex-shrink-0" onClick={(e) => e.stopPropagation()}>
             <span className="text-xl text-gray-600">{item.isStarred ? '★' : '☆'}</span>
           </div>
           <div className="flex-1 min-w-0 px-4">
