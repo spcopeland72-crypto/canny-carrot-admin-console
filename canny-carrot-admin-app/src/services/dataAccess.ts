@@ -14,20 +14,36 @@ import type { BusinessRecord, CustomerRecord, BusinessFormData, CustomerFormData
 export const businessData = {
   /**
    * Get all businesses from Redis
+   * Uses KEYS pattern matching (same method as db dump screen)
    */
   getAll: async (): Promise<BusinessRecord[]> => {
     try {
-      // Get all business IDs from the businesses:all set
-      const businessIds = await redis.smembers(REDIS_KEYS.businessList());
+      // Use KEYS pattern to find all business keys (same method as db dump screen)
+      const allBusinessKeys = await redis.keys('business:*');
+      console.log(`[businessData.getAll] Found ${allBusinessKeys.length} keys matching business:* pattern`);
       
-      if (businessIds.length === 0) {
-        console.log('[businessData.getAll] No businesses found in Redis');
+      // Filter out non-business record keys (like business:email:*, business:{id}:rewards, etc.)
+      // Only keep keys that match the pattern business:{id} where id doesn't contain colons
+      const businessKeys = allBusinessKeys.filter(key => {
+        const parts = key.split(':');
+        // Valid business key format: business:{id} (exactly 2 parts, second part is the ID)
+        if (parts.length === 2 && parts[0] === 'business') {
+          // Exclude email index keys (business:email:*)
+          if (parts[1] === 'email') return false;
+          return true;
+        }
+        return false;
+      });
+      
+      console.log(`[businessData.getAll] Filtered to ${businessKeys.length} business record keys`);
+      
+      if (businessKeys.length === 0) {
+        console.log('[businessData.getAll] No business record keys found in Redis');
         return [];
       }
 
       // Fetch all business records in parallel
-      const businessKeys = businessIds.map(id => REDIS_KEYS.business(id));
-      console.log(`[businessData.getAll] Fetching ${businessIds.length} businesses with keys:`, businessKeys.slice(0, 5));
+      console.log(`[businessData.getAll] Fetching ${businessKeys.length} businesses with keys:`, businessKeys.slice(0, 5));
       const businessDataStrings = await redis.mget(businessKeys);
       
       const businesses: BusinessRecord[] = [];
@@ -36,17 +52,17 @@ export const businessData = {
           try {
             const business = JSON.parse(businessDataStrings[i]!) as BusinessRecord;
             businesses.push(business);
-            console.log(`[businessData.getAll] Loaded business: ${business.profile.name} (${businessIds[i]})`);
+            console.log(`[businessData.getAll] Loaded business: ${business.profile?.name || 'Unknown'} (${businessKeys[i]})`);
           } catch (parseError) {
-            console.error(`Error parsing business ${businessIds[i]}:`, parseError);
+            console.error(`Error parsing business ${businessKeys[i]}:`, parseError);
             console.error(`Raw data:`, businessDataStrings[i]?.substring(0, 200));
           }
         } else {
-          console.warn(`[businessData.getAll] No data found for business ID: ${businessIds[i]}`);
+          console.warn(`[businessData.getAll] No data found for business key: ${businessKeys[i]}`);
         }
       }
 
-      console.log(`[businessData.getAll] Loaded ${businesses.length} businesses from Redis (expected ${businessIds.length})`);
+      console.log(`[businessData.getAll] ✅ Loaded ${businesses.length} businesses from Redis`);
       return businesses;
     } catch (error) {
       console.error('[businessData.getAll] Error fetching businesses from Redis:', error);
@@ -388,17 +404,36 @@ export const businessData = {
 export const customerData = {
   /**
    * Get all customers from Redis
+   * Uses KEYS pattern matching (same method as db dump screen)
    */
   getAll: async (): Promise<CustomerRecord[]> => {
     try {
-      const customerIds = await redis.smembers(REDIS_KEYS.customerList());
+      // Use KEYS pattern to find all customer keys (same method as db dump screen)
+      const allCustomerKeys = await redis.keys('customer:*');
+      console.log(`[customerData.getAll] Found ${allCustomerKeys.length} keys matching customer:* pattern`);
       
-      if (customerIds.length === 0) {
-        console.log('[customerData.getAll] No customers found in Redis');
+      // Filter out non-customer record keys (like customer:email:*, customer:{id}:rewards, etc.)
+      // Only keep keys that match the pattern customer:{id} where id doesn't contain colons
+      const customerKeys = allCustomerKeys.filter(key => {
+        const parts = key.split(':');
+        // Valid customer key format: customer:{id} (exactly 2 parts, second part is the ID)
+        if (parts.length === 2 && parts[0] === 'customer') {
+          // Exclude email index keys (customer:email:*)
+          if (parts[1] === 'email') return false;
+          return true;
+        }
+        return false;
+      });
+      
+      console.log(`[customerData.getAll] Filtered to ${customerKeys.length} customer record keys`);
+      
+      if (customerKeys.length === 0) {
+        console.log('[customerData.getAll] No customer record keys found in Redis');
         return [];
       }
 
-      const customerKeys = customerIds.map(id => REDIS_KEYS.customer(id));
+      // Fetch all customer records in parallel
+      console.log(`[customerData.getAll] Fetching ${customerKeys.length} customers with keys:`, customerKeys.slice(0, 5));
       const customerDataStrings = await redis.mget(customerKeys);
       
       const customers: CustomerRecord[] = [];
@@ -407,13 +442,17 @@ export const customerData = {
           try {
             const customer = JSON.parse(customerDataStrings[i]!) as CustomerRecord;
             customers.push(customer);
+            console.log(`[customerData.getAll] Loaded customer: ${customer.profile?.name || 'Unknown'} (${customerKeys[i]})`);
           } catch (parseError) {
-            console.error(`Error parsing customer ${customerIds[i]}:`, parseError);
+            console.error(`Error parsing customer ${customerKeys[i]}:`, parseError);
+            console.error(`Raw data:`, customerDataStrings[i]?.substring(0, 200));
           }
+        } else {
+          console.warn(`[customerData.getAll] No data found for customer key: ${customerKeys[i]}`);
         }
       }
 
-      console.log(`[customerData.getAll] Loaded ${customers.length} customers from Redis`);
+      console.log(`[customerData.getAll] ✅ Loaded ${customers.length} customers from Redis`);
       return customers;
     } catch (error) {
       console.error('[customerData.getAll] Error fetching customers from Redis:', error);
