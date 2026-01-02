@@ -1,5 +1,22 @@
 # Canny Carrot Admin Console - Release Notes
 
+## 2025-01-02 - Customer List Background and Clickability Fix
+
+### Changes Made
+- **Fixed blue background on customer records** - Removed conditional background color, all items now have white background
+- **Fixed clickability** - Added stopPropagation to checkbox and star icon containers to prevent blocking row clicks
+- **Ensured entire row is clickable** - onClick handler now works properly for the full row
+
+### Technical Details
+- Updated `EmailList.tsx` to use consistent `bg-white` for all items
+- Added `onClick={(e) => e.stopPropagation()}` to checkbox and star containers
+- Removed conditional `isRead` background logic that was causing blue/gray backgrounds
+
+### Commit
+- `[latest]` - Fix customer list blue background and clickability
+
+---
+
 ## 2025-01-02 - UI Formatting and Clickability Fixes
 
 ### Changes Made
