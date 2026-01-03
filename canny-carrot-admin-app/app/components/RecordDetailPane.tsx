@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { BusinessRecord, CustomerRecord, CustomerStatus } from '@/src/types';
+import type { BusinessRecord, CustomerRecord, CustomerStatus, BusinessStatus, SubscriptionTier } from '@/src/types';
 
 interface RecordDetailPaneProps {
   record: BusinessRecord | CustomerRecord;
@@ -18,36 +18,95 @@ export const RecordDetailPane: React.FC<RecordDetailPaneProps> = ({ record, type
   const memberRecord = isMember ? (record as BusinessRecord) : null;
   const customerRecord = !isMember ? (record as CustomerRecord) : null;
   
-  const [formData, setFormData] = useState({
-    name: record.profile.name || '',
-    email: record.profile.email || '',
-    phone: record.profile.phone || '',
-    dateOfBirth: customerRecord?.profile.dateOfBirth || '',
-    postcode: record.profile.postcode || '',
-    notifications: customerRecord?.profile.preferences?.notifications ?? true,
-    emailMarketing: customerRecord?.profile.preferences?.emailMarketing ?? false,
-    smsMarketing: customerRecord?.profile.preferences?.smsMarketing ?? false,
-    favouriteCategories: customerRecord?.profile.favouriteCategories || [],
-    referralCode: customerRecord?.profile.referralCode || '',
-    status: record.status,
-    joinDate: record.joinDate || '',
-    renewalDate: customerRecord?.renewalDate || '',
-    onboardingCompleted: record.onboardingCompleted || false,
-    notes: record.notes || '',
-  });
+  const initialFormData = isMember && memberRecord
+    ? {
+        name: memberRecord.profile.name || '',
+        email: memberRecord.profile.email || '',
+        phone: memberRecord.profile.phone || '',
+        contactName: memberRecord.profile.contactName || '',
+        addressLine1: memberRecord.profile.addressLine1 || '',
+        addressLine2: memberRecord.profile.addressLine2 || '',
+        city: memberRecord.profile.city || '',
+        postcode: memberRecord.profile.postcode || '',
+        country: memberRecord.profile.country || 'UK',
+        businessType: memberRecord.profile.businessType || '',
+        category: memberRecord.profile.category || '',
+        description: memberRecord.profile.description || '',
+        companyNumber: memberRecord.profile.companyNumber || '',
+        teamSize: memberRecord.profile.teamSize || '',
+        website: memberRecord.profile.website || '',
+        facebook: memberRecord.profile.socialMedia?.facebook || '',
+        instagram: memberRecord.profile.socialMedia?.instagram || '',
+        twitter: memberRecord.profile.socialMedia?.twitter || '',
+        tiktok: memberRecord.profile.socialMedia?.tiktok || '',
+        linkedin: memberRecord.profile.socialMedia?.linkedin || '',
+        subscriptionTier: memberRecord.subscriptionTier || 'bronze',
+        status: memberRecord.status || 'pending',
+        CRMIntegration: memberRecord.profile.CRMIntegration ?? false,
+        notificationsOptIn: memberRecord.profile.notificationsOptIn ?? false,
+        joinDate: memberRecord.joinDate || '',
+        renewalDate: memberRecord.renewalDate || '',
+        onboardingCompleted: memberRecord.onboardingCompleted || false,
+        notes: memberRecord.notes || '',
+        // Customer-only fields (always present but empty for members)
+        dateOfBirth: '',
+        notifications: true,
+        emailMarketing: false,
+        smsMarketing: false,
+        favouriteCategories: [] as string[],
+        referralCode: '',
+      }
+    : {
+        name: customerRecord?.profile.name || '',
+        email: customerRecord?.profile.email || '',
+        phone: customerRecord?.profile.phone || '',
+        dateOfBirth: customerRecord?.profile.dateOfBirth || '',
+        postcode: customerRecord?.profile.postcode || '',
+        notifications: customerRecord?.profile.preferences?.notifications ?? true,
+        emailMarketing: customerRecord?.profile.preferences?.emailMarketing ?? false,
+        smsMarketing: customerRecord?.profile.preferences?.smsMarketing ?? false,
+        favouriteCategories: customerRecord?.profile.favouriteCategories || [],
+        referralCode: customerRecord?.profile.referralCode || '',
+        status: customerRecord?.status || 'pending',
+        joinDate: customerRecord?.joinDate || '',
+        renewalDate: customerRecord?.renewalDate || '',
+        onboardingCompleted: customerRecord?.onboardingCompleted || false,
+        notes: customerRecord?.notes || '',
+        // Member-only fields (always present but empty for customers)
+        contactName: '',
+        addressLine1: '',
+        addressLine2: '',
+        city: '',
+        country: '',
+        businessType: '',
+        category: '',
+        description: '',
+        companyNumber: '',
+        teamSize: '',
+        website: '',
+        facebook: '',
+        instagram: '',
+        twitter: '',
+        tiktok: '',
+        linkedin: '',
+        subscriptionTier: 'bronze' as SubscriptionTier,
+        CRMIntegration: false,
+        notificationsOptIn: false,
+      };
 
+  const [formData, setFormData] = useState<any>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const updateField = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev: any) => ({ ...prev, [field]: value }));
   };
 
   const toggleCategory = (category: string) => {
     if (!isMember) {
-      setFormData(prev => ({
+      setFormData((prev: any) => ({
         ...prev,
         favouriteCategories: prev.favouriteCategories.includes(category)
-          ? prev.favouriteCategories.filter(c => c !== category)
+          ? prev.favouriteCategories.filter((c: string) => c !== category)
           : [...prev.favouriteCategories, category]
       }));
     }
@@ -74,10 +133,32 @@ export const RecordDetailPane: React.FC<RecordDetailPaneProps> = ({ record, type
               name: formData.name,
               email: formData.email,
               phone: formData.phone,
+              contactName: formData.contactName,
+              addressLine1: formData.addressLine1,
+              addressLine2: formData.addressLine2,
+              city: formData.city,
               postcode: formData.postcode,
+              country: formData.country,
+              businessType: formData.businessType,
+              category: formData.category,
+              description: formData.description,
+              companyNumber: formData.companyNumber,
+              teamSize: formData.teamSize,
+              website: formData.website,
+              socialMedia: {
+                facebook: formData.facebook,
+                instagram: formData.instagram,
+                twitter: formData.twitter,
+                tiktok: formData.tiktok,
+                linkedin: formData.linkedin,
+              },
+              CRMIntegration: formData.CRMIntegration,
+              notificationsOptIn: formData.notificationsOptIn,
             },
+            subscriptionTier: formData.subscriptionTier,
             status: formData.status,
             joinDate: formData.joinDate,
+            renewalDate: formData.renewalDate,
             onboardingCompleted: formData.onboardingCompleted,
             notes: formData.notes,
           }),
@@ -150,7 +231,7 @@ export const RecordDetailPane: React.FC<RecordDetailPaneProps> = ({ record, type
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Name
+                {isMember ? 'Business Name' : 'Name'}
               </label>
               <input
                 type="text"
@@ -159,6 +240,20 @@ export const RecordDetailPane: React.FC<RecordDetailPaneProps> = ({ record, type
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
+
+            {isMember && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Contact Name
+                </label>
+                <input
+                  type="text"
+                  value={formData.contactName}
+                  onChange={(e) => updateField('contactName', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -212,6 +307,274 @@ export const RecordDetailPane: React.FC<RecordDetailPaneProps> = ({ record, type
             </div>
           </div>
         </section>
+
+        {/* Address - Members only */}
+        {isMember && (
+          <section className="mb-8">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Address</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Address Line 1
+                </label>
+                <input
+                  type="text"
+                  value={formData.addressLine1}
+                  onChange={(e) => updateField('addressLine1', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Address Line 2
+                </label>
+                <input
+                  type="text"
+                  value={formData.addressLine2}
+                  onChange={(e) => updateField('addressLine2', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  City
+                </label>
+                <input
+                  type="text"
+                  value={formData.city}
+                  onChange={(e) => updateField('city', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Country
+                </label>
+                <input
+                  type="text"
+                  value={formData.country}
+                  onChange={(e) => updateField('country', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Business Details - Members only */}
+        {isMember && (
+          <section className="mb-8">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Business Details</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Business Type
+                </label>
+                <input
+                  type="text"
+                  value={formData.businessType}
+                  onChange={(e) => updateField('businessType', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Category
+                </label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => updateField('category', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select category</option>
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => updateField('description', e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Company Number
+                </label>
+                <input
+                  type="text"
+                  value={formData.companyNumber}
+                  onChange={(e) => updateField('companyNumber', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Team Size
+                </label>
+                <input
+                  type="text"
+                  value={formData.teamSize}
+                  onChange={(e) => updateField('teamSize', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Online Presence - Members only */}
+        {isMember && (
+          <section className="mb-8">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Online Presence</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Website
+                </label>
+                <input
+                  type="url"
+                  value={formData.website}
+                  onChange={(e) => updateField('website', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Facebook
+                </label>
+                <input
+                  type="url"
+                  value={formData.facebook}
+                  onChange={(e) => updateField('facebook', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Instagram
+                </label>
+                <input
+                  type="url"
+                  value={formData.instagram}
+                  onChange={(e) => updateField('instagram', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Twitter/X
+                </label>
+                <input
+                  type="url"
+                  value={formData.twitter}
+                  onChange={(e) => updateField('twitter', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  TikTok
+                </label>
+                <input
+                  type="url"
+                  value={formData.tiktok}
+                  onChange={(e) => updateField('tiktok', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  LinkedIn
+                </label>
+                <input
+                  type="url"
+                  value={formData.linkedin}
+                  onChange={(e) => updateField('linkedin', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Subscription - Members only */}
+        {isMember && (
+          <section className="mb-8">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Subscription</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Subscription Tier
+                </label>
+                <select
+                  value={formData.subscriptionTier}
+                  onChange={(e) => updateField('subscriptionTier', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="bronze">BRONZE</option>
+                  <option value="silver">SILVER</option>
+                  <option value="gold">GOLD</option>
+                </select>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Settings - Members only */}
+        {isMember && (
+          <section className="mb-8">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Settings</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={formData.CRMIntegration}
+                  onChange={(e) => updateField('CRMIntegration', e.target.checked)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <label className="text-sm font-medium text-gray-700">
+                  CRM Integration
+                </label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={formData.notificationsOptIn}
+                  onChange={(e) => updateField('notificationsOptIn', e.target.checked)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <label className="text-sm font-medium text-gray-700">
+                  Notifications Opt-In
+                </label>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Preferences - Customer only */}
         {!isMember && (
@@ -334,19 +697,17 @@ export const RecordDetailPane: React.FC<RecordDetailPaneProps> = ({ record, type
               />
             </div>
 
-            {!isMember && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Renewal Date
-                </label>
-                <input
-                  type="date"
-                  value={formData.renewalDate ? formData.renewalDate.split('T')[0] : ''}
-                  onChange={(e) => updateField('renewalDate', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Renewal Date
+              </label>
+              <input
+                type="date"
+                value={formData.renewalDate ? formData.renewalDate.split('T')[0] : ''}
+                onChange={(e) => updateField('renewalDate', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
 
             <div className="flex items-center space-x-2">
               <input
