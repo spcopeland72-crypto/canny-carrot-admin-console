@@ -109,6 +109,8 @@ function App(): React.JSX.Element {
   // Get businesses for Members view
   const [businesses, setBusinesses] = React.useState<BusinessRecord[]>([]);
   const [customers, setCustomers] = React.useState<CustomerRecord[]>([]);
+  const [systemNotificationsList, setSystemNotificationsList] = React.useState<SystemNotification[]>([]);
+  const [systemNotificationsTotal, setSystemNotificationsTotal] = React.useState(0);
 
   const [error, setError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
