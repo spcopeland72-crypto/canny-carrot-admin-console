@@ -3,11 +3,11 @@ import { View, Text } from 'react-native';
 import EmailClientLayout from './src/components/EmailClientLayout';
 import { EmailList } from './src/components/EmailList';
 import { EmailToolbar } from './src/components/EmailToolbar';
-import { businessData, customerData } from './src/services/dataAccess';
+import { businessData, customerData, systemNotifications, type SystemNotification } from './src/services/dataAccess';
 import { Colors } from './src/constants/Colors';
 import type { BusinessRecord, CustomerRecord } from './src/types';
 
-type ViewType = 'Members' | 'Customers' | 'Apps' | 'Website' | 'Sent' | 'Drafts' | 'Trash' | 'Archive';
+type ViewType = 'Members' | 'Customers' | 'System' | 'Apps' | 'Website' | 'Sent' | 'Drafts' | 'Trash' | 'Archive';
 
 function App(): React.JSX.Element {
   const [currentView, setCurrentView] = useState<ViewType>('Members');
@@ -40,6 +40,10 @@ function App(): React.JSX.Element {
           const data = await customerData.getAll();
           console.log('[App] Refreshed customers from Redis:', data.length);
           setCustomers(data || []);
+        } else if (currentView === 'System') {
+          const data = await systemNotifications.getList({ limit: 100 });
+          setSystemNotificationsList(data.notifications);
+          setSystemNotificationsTotal(data.total);
         }
       } catch (error: any) {
         console.error('[App] Error refreshing data:', error);
@@ -123,6 +127,10 @@ function App(): React.JSX.Element {
           const data = await customerData.getAll();
           console.log('[App] Loaded customers from Redis:', data.length);
           setCustomers(data || []);
+        } else if (currentView === 'System') {
+          const data = await systemNotifications.getList({ limit: 100 });
+          setSystemNotificationsList(data.notifications);
+          setSystemNotificationsTotal(data.total);
         }
       } catch (error: any) {
         console.error('[App] Error loading data from Redis:', error);
@@ -190,11 +198,25 @@ function App(): React.JSX.Element {
       hasAttachments: false,
     }));
 
+  const systemListItems = systemNotificationsList.map((n) => ({
+    id: n.id,
+    senderName: n.source ?? 'System',
+    senderEmail: '',
+    subject: n.title,
+    preview: `${n.severity} • ${n.type}${n.body ? ` — ${n.body.slice(0, 40)}${n.body.length > 40 ? '…' : ''}` : ''}`,
+    date: n.timestamp,
+    isRead: true,
+    isStarred: n.severity === 'error',
+    hasAttachments: false,
+  }));
+
   const getCurrentItems = () => {
     if (currentView === 'Members') {
       return businessListItems;
     } else if (currentView === 'Customers') {
       return customerListItems;
+    } else if (currentView === 'System') {
+      return systemListItems;
     }
     return [];
   };
@@ -204,6 +226,8 @@ function App(): React.JSX.Element {
       return businesses.length;
     } else if (currentView === 'Customers') {
       return customers.length;
+    } else if (currentView === 'System') {
+      return systemNotificationsTotal;
     }
     return 0;
   };
@@ -235,7 +259,7 @@ function App(): React.JSX.Element {
       );
     }
 
-    if (currentView === 'Members' || currentView === 'Customers') {
+    if (currentView === 'Members' || currentView === 'Customers' || currentView === 'System') {
       return (
         <View style={{ flex: 1, flexDirection: 'column' }}>
           <EmailToolbar
@@ -252,7 +276,13 @@ function App(): React.JSX.Element {
           />
           <EmailList
             items={getCurrentItems()}
-            emptyMessage={currentView === 'Members' ? 'No businesses found' : 'No customers found'}
+            emptyMessage={
+              currentView === 'Members'
+                ? 'No businesses found'
+                : currentView === 'Customers'
+                  ? 'No customers found'
+                  : 'No system notifications'
+            }
             onItemPress={handleItemClick}
           />
         </View>

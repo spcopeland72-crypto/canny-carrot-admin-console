@@ -244,10 +244,11 @@ const AdminBusinessesPage: React.FC<AdminBusinessesPageProps> = ({
   };
 
   const filteredBusinesses = businesses.filter(business => {
+    if (!business?.profile?.id) return false;
     const matchesSearch =
-      business.profile.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      business.profile.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      business.profile.phone?.toLowerCase().includes(searchQuery.toLowerCase());
+      (business.profile.name ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (business.profile.email ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (business.profile.phone ?? '')?.toLowerCase().includes(searchQuery.toLowerCase());
     
     // For 'all' filter, exclude closed businesses unless specifically filtering for them
     // Closed businesses are archived and should not appear in active lists

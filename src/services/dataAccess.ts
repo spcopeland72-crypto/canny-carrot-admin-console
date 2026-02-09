@@ -3,9 +3,75 @@
  * All operations commit to Redis database - single source of truth
  */
 
-import { redis, REDIS_KEYS } from './redis';
-import { sendBusinessInvitation } from './emailService';
+import { redis, REDIS_KEYS, getApiBaseUrl } from './redis';
 import type { BusinessRecord, CustomerRecord, BusinessFormData, CustomerFormData, LifecycleAction } from '../types';
+import { sendBusinessInvitation } from './emailService';
+
+/** Normalize Redis business doc (nested profile or flat) to BusinessRecord. */
+function normalizeBusinessRecord(raw: Record<string, unknown>, fallbackId: string): BusinessRecord | null {
+  const profile = (raw.profile as Record<string, unknown> | undefined) ?? {};
+  const id = (profile.id ?? raw.id ?? fallbackId) as string;
+  if (!id) return null;
+  return {
+    profile: {
+      id,
+      name: (profile.name ?? raw.name ?? '') as string,
+      email: (profile.email ?? raw.email ?? '') as string,
+      phone: (profile.phone ?? raw.phone ?? '') as string,
+      addressLine1: (profile.addressLine1 ?? raw.addressLine1) as string | undefined,
+      addressLine2: (profile.addressLine2 ?? raw.addressLine2) as string | undefined,
+      city: (profile.city ?? raw.city) as string | undefined,
+      postcode: (profile.postcode ?? raw.postcode) as string | undefined,
+      country: (profile.country ?? raw.country) as string | undefined,
+      businessType: (profile.businessType ?? raw.businessType) as string | undefined,
+      contactName: (profile.contactName ?? raw.contactName) as string | undefined,
+      category: (profile.category ?? raw.category) as string | undefined,
+      description: (profile.description ?? raw.description) as string | undefined,
+      website: (profile.website ?? raw.website) as string | undefined,
+      socialMedia: (profile.socialMedia ?? raw.socialMedia) as Record<string, unknown> | undefined,
+      companyNumber: (profile.companyNumber ?? raw.companyNumber) as string | undefined,
+      teamSize: (profile.teamSize ?? raw.teamSize) as string | undefined,
+      CRMIntegration: (profile.CRMIntegration ?? raw.CRMIntegration) as boolean | undefined,
+      notificationsOptIn: (profile.notificationsOptIn ?? raw.notificationsOptIn) as boolean | undefined,
+      createdAt: (profile.createdAt ?? raw.createdAt) as string | undefined,
+      updatedAt: (profile.updatedAt ?? raw.updatedAt) as string | undefined,
+    },
+    subscriptionTier: (raw.subscriptionTier ?? 'silver') as BusinessRecord['subscriptionTier'],
+    status: (raw.status ?? 'pending') as BusinessRecord['status'],
+    joinDate: (raw.joinDate ?? raw.createdAt ?? new Date().toISOString()) as string,
+    renewalDate: raw.renewalDate as string | undefined,
+    onboardingCompleted: (raw.onboardingCompleted ?? false) as boolean,
+    rewards: (raw.rewards ?? { live: [], draft: [], archived: [] }) as BusinessRecord['rewards'],
+    campaigns: (raw.campaigns ?? { live: [], draft: [], archived: [] }) as BusinessRecord['campaigns'],
+    customerCount: (raw.customerCount ?? 0) as number,
+    totalScans: (raw.totalScans ?? 0) as number,
+    ...(raw as Partial<BusinessRecord>),
+  };
+}
+
+/** Normalize Redis customer doc (nested profile or flat) to CustomerRecord. */
+function normalizeCustomerRecord(raw: Record<string, unknown>, fallbackId: string): CustomerRecord | null {
+  const profile = (raw.profile as Record<string, unknown> | undefined) ?? {};
+  const id = (profile.id ?? raw.id ?? fallbackId) as string;
+  if (!id) return null;
+  return {
+    profile: {
+      id,
+      name: (profile.name ?? raw.name ?? raw.firstName) as string | undefined,
+      email: (profile.email ?? raw.email) as string | undefined,
+      phone: (profile.phone ?? raw.phone) as string | undefined,
+      dateOfBirth: (profile.dateOfBirth ?? raw.dateOfBirth) as string | undefined,
+      postcode: (profile.postcode ?? raw.postcode) as string | undefined,
+      preferences: (profile.preferences ?? raw.preferences) as CustomerRecord['profile']['preferences'],
+      createdAt: (profile.createdAt ?? raw.createdAt ?? new Date().toISOString()) as string,
+      updatedAt: (profile.updatedAt ?? raw.updatedAt ?? new Date().toISOString()) as string,
+    },
+    status: (raw.status ?? 'pending') as CustomerRecord['status'],
+    joinDate: (raw.joinDate ?? raw.createdAt ?? new Date().toISOString()) as string,
+    onboardingCompleted: (raw.onboardingCompleted ?? false) as boolean,
+    ...(raw as Partial<CustomerRecord>),
+  };
+}
 
 // ============================================
 // BUSINESS OPERATIONS - Redis
@@ -34,9 +100,14 @@ export const businessData = {
       for (let i = 0; i < businessDataStrings.length; i++) {
         if (businessDataStrings[i]) {
           try {
-            const business = JSON.parse(businessDataStrings[i]!) as BusinessRecord;
-            businesses.push(business);
-            console.log(`[businessData.getAll] Loaded business: ${business.profile.name} (${businessIds[i]})`);
+            const raw = JSON.parse(businessDataStrings[i]!) as Record<string, unknown>;
+            const business = normalizeBusinessRecord(raw, businessIds[i]);
+            if (business?.profile?.id) {
+              businesses.push(business);
+              console.log(`[businessData.getAll] Loaded business: ${business.profile.name} (${businessIds[i]})`);
+            } else {
+              console.warn(`[businessData.getAll] Skipped business ${businessIds[i]}: missing profile.id`);
+            }
           } catch (parseError) {
             console.error(`Error parsing business ${businessIds[i]}:`, parseError);
             console.error(`Raw data:`, businessDataStrings[i]?.substring(0, 200));
@@ -393,8 +464,13 @@ export const customerData = {
       for (let i = 0; i < customerDataStrings.length; i++) {
         if (customerDataStrings[i]) {
           try {
-            const customer = JSON.parse(customerDataStrings[i]!) as CustomerRecord;
-            customers.push(customer);
+            const raw = JSON.parse(customerDataStrings[i]!) as Record<string, unknown>;
+            const customer = normalizeCustomerRecord(raw, customerIds[i]);
+            if (customer?.profile?.id) {
+              customers.push(customer);
+            } else {
+              console.warn(`[customerData.getAll] Skipped customer ${customerIds[i]}: missing profile.id`);
+            }
           } catch (parseError) {
             console.error(`Error parsing customer ${customerIds[i]}:`, parseError);
           }
@@ -708,4 +784,34 @@ const logAction = async (
     console.error('[logAction] Error logging action to Redis:', error);
     // Don't throw - logging failure shouldn't break the operation
   }
+};
+
+// ============================================
+// SYSTEM NOTIFICATIONS (sys admin messaging)
+// ============================================
+
+export interface SystemNotification {
+  id: string;
+  type: string;
+  severity: 'info' | 'warn' | 'error';
+  timestamp: string;
+  title: string;
+  body?: string;
+  metadata?: Record<string, unknown>;
+  source?: string;
+}
+
+export const systemNotifications = {
+  getList: async (params?: { limit?: number; offset?: number; severity?: string }): Promise<{ notifications: SystemNotification[]; total: number }> => {
+    const base = getApiBaseUrl();
+    const q = new URLSearchParams();
+    if (params?.limit != null) q.set('limit', String(params.limit));
+    if (params?.offset != null) q.set('offset', String(params.offset));
+    if (params?.severity) q.set('severity', params.severity);
+    const url = `${base}/api/v1/system/notifications${q.toString() ? `?${q}` : ''}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`System notifications API error: ${res.status}`);
+    const data = await res.json();
+    return { notifications: data.notifications ?? [], total: data.total ?? 0 };
+  },
 };

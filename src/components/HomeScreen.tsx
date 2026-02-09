@@ -7,9 +7,14 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
+  Linking,
 } from 'react-native';
 import {Colors} from '../constants/Colors';
 import BottomNavigation from './BottomNavigation';
+
+const DITTOFEED_DASHBOARD_URL =
+  (typeof process !== 'undefined' && (process as any).env?.EXPO_PUBLIC_DITTOFEED_DASHBOARD_URL) ||
+  'https://messaging.cannycarrot.com';
 
 interface HomeScreenProps {
   currentScreen?: string;
@@ -95,6 +100,15 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
             <Text style={styles.actionTitle}>Manage Content</Text>
             <Text style={styles.actionSubtitle}>
               Edit images, carousels, homescreen elements
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionCard}
+            onPress={() => Linking.openURL(DITTOFEED_DASHBOARD_URL).catch(() => {})}>
+            <Text style={styles.actionTitle}>Messaging dashboard</Text>
+            <Text style={styles.actionSubtitle}>
+              Dittofeed: journeys, segments, email & SMS campaigns
             </Text>
           </TouchableOpacity>
         </View>

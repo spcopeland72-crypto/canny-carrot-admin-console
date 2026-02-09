@@ -195,6 +195,7 @@ const AdminCustomersPage: React.FC<AdminCustomersPageProps> = ({
   };
 
   const filteredCustomers = customers.filter(customer => {
+    if (!customer?.profile?.id) return false;
     const matchesSearch =
       (customer.profile.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (customer.profile.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||

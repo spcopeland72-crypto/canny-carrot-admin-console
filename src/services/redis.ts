@@ -28,6 +28,7 @@ const getApiBaseUrl = (): string => {
   return nativeUrl;
 };
 
+export { getApiBaseUrl };
 const API_BASE_URL = getApiBaseUrl();
 const REDIS_API_URL = `${API_BASE_URL}/api/v1/redis`;
 

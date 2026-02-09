@@ -36,7 +36,7 @@ if (typeof require !== 'undefined') {
 }
 
 interface EmailClientLayoutProps {
-  currentView: 'Members' | 'Customers' | 'Apps' | 'Website' | 'Sent' | 'Drafts' | 'Trash' | 'Archive';
+  currentView: 'Members' | 'Customers' | 'System' | 'Apps' | 'Website' | 'Sent' | 'Drafts' | 'Trash' | 'Archive';
   onViewChange: (view: string) => void;
   children: React.ReactNode;
   searchQuery?: string;
@@ -80,6 +80,7 @@ const EmailClientLayout: React.FC<EmailClientLayoutProps> = ({
   const menuItems = [
     { id: 'Members', label: 'Members', iconType: 'inbox' },
     { id: 'Customers', label: 'Customers', iconType: 'star' },
+    { id: 'System', label: 'System', iconType: 'bell' },
     { id: 'Apps', label: 'Apps', iconType: 'clock' },
     { id: 'Website', label: 'Website', iconType: 'send' },
     { id: 'Drafts', label: 'Drafts', iconType: 'filetext' },
@@ -124,6 +125,13 @@ const EmailClientLayout: React.FC<EmailClientLayoutProps> = ({
           <Svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth={2}>
             <Path d="M22 2L11 13" />
             <Path d="M22 2l-7 20-4-9-9-4 20-7z" />
+          </Svg>
+        );
+      case 'bell':
+        return (
+          <Svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" stroke={iconColor} strokeWidth={2}>
+            <Path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <Path d="M13 21a1 1 0 0 1-2 0" />
           </Svg>
         );
       case 'filetext':
