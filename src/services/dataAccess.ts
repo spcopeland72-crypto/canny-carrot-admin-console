@@ -86,22 +86,41 @@ function normalizeCustomerRecord(raw: Record<string, unknown>, fallbackId: strin
 // BUSINESS OPERATIONS - Redis
 // ============================================
 
+/** Get all business IDs: from businesses:all set, then add any from KEYS business:* (so businesses not in the set still appear). */
+async function getBusinessIdsForList(): Promise<string[]> {
+  const setIds = await redis.smembers(REDIS_KEYS.businessList());
+  let keysIds: string[] = [];
+  try {
+    const keys = await redis.keys('business:*');
+    if (Array.isArray(keys)) {
+      keysIds = keys
+        .filter((k) => typeof k === 'string' && k.startsWith('business:') && k.split(':').length === 2)
+        .map((k) => (k as string).slice(9));
+    }
+  } catch {
+    // KEYS not available or failed; use set only
+  }
+  const merged = [...new Set([...setIds, ...keysIds])];
+  if (setIds.length > 0 && keysIds.length > setIds.length) {
+    console.log(`[businessData.getAll] businesses:all had ${setIds.length} ids; KEYS added ${merged.length - setIds.length} more (e.g. The Stables, Cafe Maison)`);
+  }
+  return merged;
+}
+
 export const businessData = {
   /**
-   * Get all businesses from Redis. Same approach as scripts/list-all-emails.ts:
-   * SMEMBERS businesses:all → for each id, GET business:{id} → parse and normalize (profile || flat).
+   * Get all businesses from Redis. Uses businesses:all set + KEYS business:* fallback so businesses
+   * that exist in Redis but were never added to the set (e.g. The Stables, Cafe Maison) still appear.
    */
   getAll: async (): Promise<BusinessRecord[]> => {
     try {
-      const businessIds = await redis.smembers(REDIS_KEYS.businessList());
-      
+      const businessIds = await getBusinessIdsForList();
       if (businessIds.length === 0) {
         console.log('[businessData.getAll] No businesses found in Redis');
         return [];
       }
 
-      // Fetch all business records in parallel
-      const businessKeys = businessIds.map(id => REDIS_KEYS.business(id));
+      const businessKeys = businessIds.map((id) => REDIS_KEYS.business(id));
       console.log(`[businessData.getAll] Fetching ${businessIds.length} businesses with keys:`, businessKeys.slice(0, 5));
       const businessDataStrings = await redis.mget(businessKeys);
       
@@ -454,21 +473,36 @@ export const businessData = {
 // CUSTOMER OPERATIONS - Redis
 // ============================================
 
+/** Get all customer IDs: from customers:all set, then add any from KEYS customer:* (top-level only). */
+async function getCustomerIdsForList(): Promise<string[]> {
+  const setIds = await redis.smembers(REDIS_KEYS.customerList());
+  let keysIds: string[] = [];
+  try {
+    const keys = await redis.keys('customer:*');
+    if (Array.isArray(keys)) {
+      keysIds = keys
+        .filter((k) => typeof k === 'string' && k.startsWith('customer:') && k.split(':').length === 2)
+        .map((k) => (k as string).slice(9));
+    }
+  } catch {
+    // KEYS not available or failed
+  }
+  return [...new Set([...setIds, ...keysIds])];
+}
+
 export const customerData = {
   /**
-   * Get all customers from Redis. Same approach as scripts/list-all-emails.ts:
-   * SMEMBERS customers:all → for each id, GET customer:{id} → parse and normalize (profile || flat).
+   * Get all customers from Redis. Uses customers:all set + KEYS customer:* fallback so all records appear.
    */
   getAll: async (): Promise<CustomerRecord[]> => {
     try {
-      const customerIds = await redis.smembers(REDIS_KEYS.customerList());
-      
+      const customerIds = await getCustomerIdsForList();
       if (customerIds.length === 0) {
         console.log('[customerData.getAll] No customers found in Redis');
         return [];
       }
 
-      const customerKeys = customerIds.map(id => REDIS_KEYS.customer(id));
+      const customerKeys = customerIds.map((id) => REDIS_KEYS.customer(id));
       const customerDataStrings = await redis.mget(customerKeys);
       
       const customers: CustomerRecord[] = [];
