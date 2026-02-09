@@ -7,7 +7,11 @@ import { redis, REDIS_KEYS, getApiBaseUrl } from './redis';
 import type { BusinessRecord, CustomerRecord, BusinessFormData, CustomerFormData, LifecycleAction } from '../types';
 import { sendBusinessInvitation } from './emailService';
 
-/** Normalize Redis business doc (nested profile or flat) to BusinessRecord. */
+/**
+ * Normalize Redis business doc to BusinessRecord.
+ * Matches scripts/list-all-emails.ts: business?.profile?.email || business?.email, business?.profile?.name || business?.name.
+ * Supports both nested (profile) and flat (root) fields.
+ */
 function normalizeBusinessRecord(raw: Record<string, unknown>, fallbackId: string): BusinessRecord | null {
   const profile = (raw.profile as Record<string, unknown> | undefined) ?? {};
   const id = (profile.id ?? raw.id ?? fallbackId) as string;
@@ -15,7 +19,7 @@ function normalizeBusinessRecord(raw: Record<string, unknown>, fallbackId: strin
   return {
     profile: {
       id,
-      name: (profile.name ?? raw.name ?? '') as string,
+      name: (profile.name ?? raw.name ?? raw.businessName ?? '') as string,
       email: (profile.email ?? raw.email ?? '') as string,
       phone: (profile.phone ?? raw.phone ?? '') as string,
       addressLine1: (profile.addressLine1 ?? raw.addressLine1) as string | undefined,
@@ -49,15 +53,20 @@ function normalizeBusinessRecord(raw: Record<string, unknown>, fallbackId: strin
   };
 }
 
-/** Normalize Redis customer doc (nested profile or flat) to CustomerRecord. */
+/**
+ * Normalize Redis customer doc to CustomerRecord.
+ * Matches scripts/list-all-emails.ts: customer?.profile?.email || customer?.email, customer?.profile?.name || customer?.name.
+ * Scripts use flat schema (id, email, firstName, lastName) — name = firstName + ' ' + lastName when no profile/name.
+ */
 function normalizeCustomerRecord(raw: Record<string, unknown>, fallbackId: string): CustomerRecord | null {
   const profile = (raw.profile as Record<string, unknown> | undefined) ?? {};
   const id = (profile.id ?? raw.id ?? fallbackId) as string;
   if (!id) return null;
+  const flatName = [raw.firstName, raw.lastName].filter(Boolean).join(' ').trim() || undefined;
   return {
     profile: {
       id,
-      name: (profile.name ?? raw.name ?? raw.firstName) as string | undefined,
+      name: (profile.name ?? raw.name ?? flatName) as string | undefined,
       email: (profile.email ?? raw.email) as string | undefined,
       phone: (profile.phone ?? raw.phone) as string | undefined,
       dateOfBirth: (profile.dateOfBirth ?? raw.dateOfBirth) as string | undefined,
@@ -79,11 +88,11 @@ function normalizeCustomerRecord(raw: Record<string, unknown>, fallbackId: strin
 
 export const businessData = {
   /**
-   * Get all businesses from Redis
+   * Get all businesses from Redis. Same approach as scripts/list-all-emails.ts:
+   * SMEMBERS businesses:all → for each id, GET business:{id} → parse and normalize (profile || flat).
    */
   getAll: async (): Promise<BusinessRecord[]> => {
     try {
-      // Get all business IDs from the businesses:all set
       const businessIds = await redis.smembers(REDIS_KEYS.businessList());
       
       if (businessIds.length === 0) {
@@ -126,13 +135,14 @@ export const businessData = {
   },
 
   /**
-   * Get single business by ID from Redis
+   * Get single business by ID from Redis. Normalizes so flat or nested docs both work.
    */
   getById: async (id: string): Promise<BusinessRecord | null> => {
     try {
       const data = await redis.get(REDIS_KEYS.business(id));
       if (!data) return null;
-      return JSON.parse(data) as BusinessRecord;
+      const raw = JSON.parse(data) as Record<string, unknown>;
+      return normalizeBusinessRecord(raw, id);
     } catch (error) {
       console.error(`[businessData.getById] Error fetching business ${id}:`, error);
       throw error;
@@ -446,7 +456,8 @@ export const businessData = {
 
 export const customerData = {
   /**
-   * Get all customers from Redis
+   * Get all customers from Redis. Same approach as scripts/list-all-emails.ts:
+   * SMEMBERS customers:all → for each id, GET customer:{id} → parse and normalize (profile || flat).
    */
   getAll: async (): Promise<CustomerRecord[]> => {
     try {
@@ -486,13 +497,14 @@ export const customerData = {
   },
 
   /**
-   * Get single customer by ID from Redis
+   * Get single customer by ID from Redis. Normalizes so flat (id, email, firstName, lastName) or nested both work.
    */
   getById: async (id: string): Promise<CustomerRecord | null> => {
     try {
       const data = await redis.get(REDIS_KEYS.customer(id));
       if (!data) return null;
-      return JSON.parse(data) as CustomerRecord;
+      const raw = JSON.parse(data) as Record<string, unknown>;
+      return normalizeCustomerRecord(raw, id);
     } catch (error) {
       console.error(`[customerData.getById] Error fetching customer ${id}:`, error);
       throw error;

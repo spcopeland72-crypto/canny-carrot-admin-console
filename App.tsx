@@ -154,21 +154,22 @@ function App(): React.JSX.Element {
 
   // Convert businesses to email list format (Auroxeon style)
   const businessListItems = businesses
+    .filter((business) => business?.profile?.id)
     .filter((business) => {
       if (!searchQuery) return true;
       const query = searchQuery.toLowerCase();
       return (
-        business.profile.name.toLowerCase().includes(query) ||
-        business.profile.email.toLowerCase().includes(query) ||
-        business.status.toLowerCase().includes(query)
+        (business.profile!.name ?? '').toLowerCase().includes(query) ||
+        (business.profile!.email ?? '').toLowerCase().includes(query) ||
+        (business.status ?? '').toLowerCase().includes(query)
       );
     })
     .map((business) => ({
-      id: business.profile.id,
-      senderName: business.profile.name,
-      senderEmail: business.profile.email,
-      subject: `${business.profile.name} - ${business.subscriptionTier.charAt(0).toUpperCase() + business.subscriptionTier.slice(1)}`,
-      preview: `${business.status.replace('_', ' ')} • ${business.profile.businessType || 'Business'}`,
+      id: business.profile!.id,
+      senderName: business.profile!.name ?? '',
+      senderEmail: business.profile!.email ?? '',
+      subject: `${business.profile!.name ?? ''} - ${(business.subscriptionTier ?? 'silver').charAt(0).toUpperCase() + (business.subscriptionTier ?? 'silver').slice(1)}`,
+      preview: `${(business.status ?? '').replace('_', ' ')} • ${business.profile!.businessType || 'Business'}`,
       date: business.createdAt || new Date(),
       isRead: business.status !== 'pending',
       isStarred: false,
@@ -177,21 +178,22 @@ function App(): React.JSX.Element {
 
   // Convert customers to email list format (Auroxeon style)
   const customerListItems = customers
+    .filter((customer) => customer?.profile?.id)
     .filter((customer) => {
       if (!searchQuery) return true;
       const query = searchQuery.toLowerCase();
       return (
-        customer.profile.name.toLowerCase().includes(query) ||
-        customer.profile.email.toLowerCase().includes(query) ||
-        customer.status.toLowerCase().includes(query)
+        (customer.profile!.name ?? '').toLowerCase().includes(query) ||
+        (customer.profile!.email ?? '').toLowerCase().includes(query) ||
+        (customer.status ?? '').toLowerCase().includes(query)
       );
     })
     .map((customer) => ({
-      id: customer.profile.id,
-      senderName: customer.profile.name,
-      senderEmail: customer.profile.email,
-      subject: customer.profile.name,
-      preview: `${customer.status.replace('_', ' ')} • Customer`,
+      id: customer.profile!.id,
+      senderName: customer.profile!.name ?? '',
+      senderEmail: customer.profile!.email ?? '',
+      subject: customer.profile!.name ?? '',
+      preview: `${(customer.status ?? '').replace('_', ' ')} • Customer`,
       date: customer.createdAt || new Date(),
       isRead: customer.status !== 'pending',
       isStarred: false,
