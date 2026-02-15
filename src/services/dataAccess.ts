@@ -131,12 +131,16 @@ export const businessData = {
         if (businessDataStrings[i]) {
           try {
             const raw = JSON.parse(businessDataStrings[i]!) as Record<string, unknown>;
-            const business = normalizeBusinessRecord(raw, businessIds[i]);
-            if (business?.profile?.id) {
+            const fallbackId = businessIds[i];
+            let business = normalizeBusinessRecord(raw, fallbackId);
+            if (business) {
+              if (!business.profile?.id && fallbackId) {
+                business = { ...business, profile: { ...business.profile, id: fallbackId } };
+              }
               businesses.push(business);
-              console.log(`[businessData.getAll] Loaded business: ${business.profile.name} (${businessIds[i]})`);
+              console.log(`[businessData.getAll] Loaded business: ${business.profile?.name || fallbackId} (${business.profile?.id || fallbackId})`);
             } else {
-              console.warn(`[businessData.getAll] Skipped business ${businessIds[i]}: missing profile.id`);
+              console.warn(`[businessData.getAll] Skipped business ${fallbackId}: normalizer returned null`);
             }
           } catch (parseError) {
             console.error(`Error parsing business ${businessIds[i]}:`, parseError);
