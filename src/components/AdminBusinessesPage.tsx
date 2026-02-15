@@ -245,10 +245,12 @@ const AdminBusinessesPage: React.FC<AdminBusinessesPageProps> = ({
 
   const filteredBusinesses = businesses.filter(business => {
     if (!business?.profile?.id) return false;
+    const q = searchQuery.toLowerCase();
     const matchesSearch =
-      (business.profile.name ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (business.profile.email ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (business.profile.phone ?? '')?.toLowerCase().includes(searchQuery.toLowerCase());
+      (business.profile.name ?? '').toLowerCase().includes(q) ||
+      (business.profile.id ?? '').toLowerCase().includes(q) ||
+      (business.profile.email ?? '').toLowerCase().includes(q) ||
+      (business.profile.phone ?? '')?.toLowerCase().includes(q);
     
     // For 'all' filter, exclude closed businesses unless specifically filtering for them
     // Closed businesses are archived and should not appear in active lists
@@ -298,7 +300,7 @@ const AdminBusinessesPage: React.FC<AdminBusinessesPageProps> = ({
         {/* Search */}
         <TextInput
           style={styles.searchInput}
-          placeholder="Search businesses..."
+          placeholder="Search by name, UUID, email, or phone..."
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholderTextColor={Colors.text.light}
@@ -336,7 +338,13 @@ const AdminBusinessesPage: React.FC<AdminBusinessesPageProps> = ({
           ) : (
             filteredBusinesses.map((business) => (
               <View key={business.profile.id} style={styles.businessRow}>
-                <Text style={styles.businessName}>{business.profile.name}</Text>
+                <View style={styles.businessRowPrimary}>
+                  <Text style={styles.businessName}>{business.profile.name || '(No name)'}</Text>
+                  <Text style={styles.businessId} numberOfLines={1}>{business.profile.id}</Text>
+                  {business.profile.email ? (
+                    <Text style={styles.businessEmail} numberOfLines={1}>{business.profile.email}</Text>
+                  ) : null}
+                </View>
                 <Text style={[styles.badge, { backgroundColor: getStatusColor(business.status) + '20', color: getStatusColor(business.status) }]}>
                   {business.status.replace('_', ' ').toUpperCase()}
                 </Text>
@@ -590,12 +598,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.neutral[200],
   },
-  businessName: {
+  businessRowPrimary: {
     flex: 1,
+    marginRight: 12,
+    minWidth: 0,
+  },
+  businessName: {
     fontSize: 15,
     fontWeight: '600',
     color: Colors.text.primary,
-    marginRight: 12,
+  },
+  businessId: {
+    fontSize: 12,
+    color: Colors.text.secondary,
+    marginTop: 2,
+  },
+  businessEmail: {
+    fontSize: 11,
+    color: Colors.text.light,
+    marginTop: 1,
   },
   badge: {
     fontSize: 11,

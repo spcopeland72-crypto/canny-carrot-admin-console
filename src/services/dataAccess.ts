@@ -86,7 +86,7 @@ function normalizeCustomerRecord(raw: Record<string, unknown>, fallbackId: strin
 // BUSINESS OPERATIONS - Redis
 // ============================================
 
-/** Get all business IDs: from businesses:all set, then add any from KEYS business:* (so businesses not in the set still appear). */
+/** Get all business IDs by UUID only: businesses:all set first, then KEYS business:* fallback. Never use email index for listing. */
 async function getBusinessIdsForList(): Promise<string[]> {
   const setIds = await redis.smembers(REDIS_KEYS.businessList());
   let keysIds: string[] = [];
@@ -100,9 +100,10 @@ async function getBusinessIdsForList(): Promise<string[]> {
   } catch {
     // KEYS not available or failed; use set only
   }
+  // Prefer businesses:all (UUID set); merge so any business:* doc key not in set still appears
   const merged = [...new Set([...setIds, ...keysIds])];
   if (setIds.length > 0 && keysIds.length > setIds.length) {
-    console.log(`[businessData.getAll] businesses:all had ${setIds.length} ids; KEYS added ${merged.length - setIds.length} more (e.g. The Stables, Cafe Maison)`);
+    console.log(`[businessData.getAll] businesses:all had ${setIds.length} ids; KEYS added ${merged.length - setIds.length} more`);
   }
   return merged;
 }

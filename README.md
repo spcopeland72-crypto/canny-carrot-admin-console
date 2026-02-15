@@ -2,6 +2,9 @@
 
 Comprehensive admin application for managing all businesses and customers in the Canny Carrot platform.
 
+**Identity:** GitHub repo **canny-carrot-admin-app** · Author **auroxeon** (copeland_simon@yahoo.co.uk) · Branch **master** · Development started **2025-12-28**.  
+*(In this workspace the folder may be named `canny-carrot-admin-mobile-app`; the canonical app is the one matching the repo above. See [CODEX/ADMIN_APP.md](../../CODEX/ADMIN_APP.md).)*
+
 ## Features
 
 ### Business Management
