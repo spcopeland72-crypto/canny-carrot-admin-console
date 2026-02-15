@@ -14,7 +14,8 @@ import { sendBusinessInvitation } from './emailService';
  */
 function normalizeBusinessRecord(raw: Record<string, unknown>, fallbackId: string): BusinessRecord | null {
   const profile = (raw.profile as Record<string, unknown> | undefined) ?? {};
-  const id = (profile.id ?? raw.id ?? fallbackId) as string;
+  const resolved = (profile.id ?? raw.id ?? fallbackId) as string;
+  const id = (resolved && String(resolved).trim()) ? resolved : fallbackId;
   if (!id) return null;
   return {
     profile: {
