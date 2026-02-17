@@ -349,10 +349,7 @@ const AdminBusinessesPage: React.FC<AdminBusinessesPageProps> = ({
                   <Text style={styles.businessName} numberOfLines={1}>{business.profile.name || '(No name)'}</Text>
                 </View>
                 <Text style={[styles.badge, { backgroundColor: getStatusColor(business.status) + '20', color: getStatusColor(business.status) }]}>
-                  {business.status.replace(/_/g, ' ').toUpperCase()}
-                </Text>
-                <Text style={[styles.badge, { backgroundColor: getSubscriptionColor(business.subscriptionTier) + '20', color: getSubscriptionColor(business.subscriptionTier) }]}>
-                  {(business.subscriptionTier || 'silver').charAt(0).toUpperCase() + (business.subscriptionTier || 'silver').slice(1)}
+                  {(business.subscriptionTier || 'silver').charAt(0).toUpperCase() + (business.subscriptionTier || 'silver').slice(1)} - {(business.status || '').replace(/_/g, ' ').toUpperCase()}
                 </Text>
                 <Text style={styles.moreIcon}>›</Text>
               </TouchableOpacity>
