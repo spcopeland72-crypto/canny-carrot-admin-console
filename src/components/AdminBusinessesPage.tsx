@@ -340,24 +340,22 @@ const AdminBusinessesPage: React.FC<AdminBusinessesPageProps> = ({
             </View>
           ) : (
             filteredBusinesses.map((business) => (
-              <View key={business.profile.id} style={styles.businessRow}>
+              <TouchableOpacity
+                key={business.profile.id}
+                style={styles.businessRow}
+                onPress={() => { setSelectedBusiness(business); setShowActionsModal(true); }}
+                activeOpacity={0.7}>
                 <View style={styles.businessRowPrimary}>
-                  <Text style={styles.businessName}>{business.profile.name || '(No name)'}</Text>
-                  <Text style={styles.businessId} numberOfLines={1}>{business.profile.id}</Text>
-                  {business.profile.email ? (
-                    <Text style={styles.businessEmail} numberOfLines={1}>{business.profile.email}</Text>
-                  ) : null}
+                  <Text style={styles.businessName} numberOfLines={1}>{business.profile.name || '(No name)'}</Text>
                 </View>
                 <Text style={[styles.badge, { backgroundColor: getStatusColor(business.status) + '20', color: getStatusColor(business.status) }]}>
-                  {business.status.replace('_', ' ').toUpperCase()}
+                  {business.status.replace(/_/g, ' ').toUpperCase()}
                 </Text>
                 <Text style={[styles.badge, { backgroundColor: getSubscriptionColor(business.subscriptionTier) + '20', color: getSubscriptionColor(business.subscriptionTier) }]}>
-                  {business.subscriptionTier.charAt(0).toUpperCase() + business.subscriptionTier.slice(1)}
+                  {(business.subscriptionTier || 'silver').charAt(0).toUpperCase() + (business.subscriptionTier || 'silver').slice(1)}
                 </Text>
-                <TouchableOpacity onPress={() => { setSelectedBusiness(business); setShowActionsModal(true); }}>
-                  <Text style={styles.dots}>⋯</Text>
-                </TouchableOpacity>
-              </View>
+                <Text style={styles.moreIcon}>›</Text>
+              </TouchableOpacity>
             ))
           )}
         </View>
@@ -611,16 +609,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.text.primary,
   },
-  businessId: {
-    fontSize: 12,
-    color: Colors.text.secondary,
-    marginTop: 2,
-  },
-  businessEmail: {
-    fontSize: 11,
-    color: Colors.text.light,
-    marginTop: 1,
-  },
   badge: {
     fontSize: 11,
     fontWeight: '600',
@@ -630,10 +618,11 @@ const styles = StyleSheet.create({
     marginRight: 8,
     textTransform: 'uppercase',
   },
-  dots: {
-    fontSize: 18,
+  moreIcon: {
+    fontSize: 20,
+    fontWeight: '600',
     color: Colors.text.secondary,
-    padding: 4,
+    marginLeft: 4,
   },
   modalOverlay: {
     flex: 1,
