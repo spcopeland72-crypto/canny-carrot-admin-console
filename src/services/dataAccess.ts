@@ -131,16 +131,29 @@ export const businessData = {
         if (businessDataStrings[i]) {
           try {
             const raw = JSON.parse(businessDataStrings[i]!) as Record<string, unknown>;
-            const fallbackId = businessIds[i];
+            const fallbackId = businessIds[i] ?? '';
             let business = normalizeBusinessRecord(raw, fallbackId);
+            if (!business && fallbackId) {
+              /* Always include when parsed: use key as profile.id when normalizer returned null */
+              business = {
+                profile: { id: fallbackId, name: '', email: '', phone: '' },
+                subscriptionTier: 'silver',
+                status: 'pending',
+                joinDate: new Date().toISOString(),
+                onboardingCompleted: false,
+                rewards: { live: [], draft: [], archived: [] },
+                campaigns: { live: [], draft: [], archived: [] },
+                customerCount: 0,
+                totalScans: 0,
+              };
+              console.log(`[businessData.getAll] Included business (minimal) using key: ${fallbackId}`);
+            }
             if (business) {
               if (!business.profile?.id && fallbackId) {
                 business = { ...business, profile: { ...business.profile, id: fallbackId } };
               }
               businesses.push(business);
               console.log(`[businessData.getAll] Loaded business: ${business.profile?.name || fallbackId} (${business.profile?.id || fallbackId})`);
-            } else {
-              console.warn(`[businessData.getAll] Skipped business ${fallbackId}: normalizer returned null`);
             }
           } catch (parseError) {
             console.error(`Error parsing business ${businessIds[i]}:`, parseError);
