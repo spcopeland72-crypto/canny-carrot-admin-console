@@ -165,6 +165,22 @@ export const businessData = {
       }
 
       console.log(`[businessData.getAll] Loaded ${businesses.length} businesses from Redis (expected ${businessIds.length})`);
+
+      // Sort: RENEWAL first, then ACTIVE, then PENDING, then suspended/closed/exiting
+      const statusOrder: Record<string, number> = {
+        renewal_due: 0,
+        active: 1,
+        pending: 2,
+        suspended: 3,
+        closed: 4,
+        exiting: 5,
+      };
+      businesses.sort((a, b) => {
+        const sa = (a.status || 'pending').toLowerCase();
+        const sb = (b.status || 'pending').toLowerCase();
+        return (statusOrder[sa] ?? 6) - (statusOrder[sb] ?? 6);
+      });
+
       return businesses;
     } catch (error) {
       console.error('[businessData.getAll] Error fetching businesses from Redis:', error);
