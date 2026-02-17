@@ -339,21 +339,35 @@ const AdminBusinessesPage: React.FC<AdminBusinessesPageProps> = ({
               <Text style={styles.emptyStateText}>No businesses found</Text>
             </View>
           ) : (
-            filteredBusinesses.map((business) => (
-              <TouchableOpacity
-                key={business.profile.id}
-                style={styles.businessRow}
-                onPress={() => { setSelectedBusiness(business); setShowActionsModal(true); }}
-                activeOpacity={0.7}>
-                <View style={styles.businessRowPrimary}>
+            filteredBusinesses.map((business) => {
+              const tier = (business.subscriptionTier || 'silver').toLowerCase();
+              const validTier = ['bronze', 'silver', 'gold'].includes(tier) ? tier : 'silver';
+              const regDate = business.joinDate ? new Date(business.joinDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+              return (
+                <View key={business.profile.id} style={styles.businessRow}>
                   <Text style={styles.businessName} numberOfLines={1}>{business.profile.name || '(No name)'}</Text>
+                  <Text style={[styles.badge, styles.tierBadge, { backgroundColor: getSubscriptionColor(validTier) + '30', color: getSubscriptionColor(validTier) }]}>
+                    {validTier.charAt(0).toUpperCase() + validTier.slice(1)}
+                  </Text>
+                  <Text style={[styles.badge, { backgroundColor: getStatusColor(business.status) + '20', color: getStatusColor(business.status) }]}>
+                    {(business.status || '').replace(/_/g, ' ').toUpperCase()}
+                  </Text>
+                  <Text style={styles.regDate}>{regDate}</Text>
+                  <TouchableOpacity
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    onPress={() => handleDelete(business.profile.id)}
+                    style={styles.rowIcon}>
+                    <Text style={styles.deleteIcon}>🗑</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    onPress={() => handleEdit(business)}
+                    style={styles.rowIcon}>
+                    <Text style={styles.editIcon}>✏</Text>
+                  </TouchableOpacity>
                 </View>
-                <Text style={[styles.badge, { backgroundColor: getStatusColor(business.status) + '20', color: getStatusColor(business.status) }]}>
-                  {(business.subscriptionTier || 'silver').charAt(0).toUpperCase() + (business.subscriptionTier || 'silver').slice(1)} - {(business.status || '').replace(/_/g, ' ').toUpperCase()}
-                </Text>
-                <Text style={styles.moreIcon}>›</Text>
-              </TouchableOpacity>
-            ))
+              );
+            })
           )}
         </View>
       </View>
@@ -595,31 +609,41 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: Colors.neutral[200],
-  },
-  businessRowPrimary: {
-    flex: 1,
-    marginRight: 12,
-    minWidth: 0,
+    flexWrap: 'wrap',
   },
   businessName: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
     color: Colors.text.primary,
+    flex: 1,
+    minWidth: 80,
+    marginRight: 8,
   },
   badge: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    marginRight: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginRight: 6,
     textTransform: 'uppercase',
   },
-  moreIcon: {
-    fontSize: 20,
-    fontWeight: '600',
+  tierBadge: {
+    marginRight: 6,
+  },
+  regDate: {
+    fontSize: 11,
     color: Colors.text.secondary,
-    marginLeft: 4,
+    marginRight: 8,
+  },
+  rowIcon: {
+    padding: 4,
+  },
+  deleteIcon: {
+    fontSize: 16,
+  },
+  editIcon: {
+    fontSize: 16,
   },
   modalOverlay: {
     flex: 1,
