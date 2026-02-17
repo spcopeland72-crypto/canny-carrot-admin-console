@@ -115,6 +115,41 @@ function App(): React.JSX.Element {
 
   const [error, setError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [editingBusiness, setEditingBusiness] = React.useState<BusinessRecord | null>(null);
+
+  const handleEditBusiness = (item: { id: string }) => {
+    const b = businesses.find((x) => x.profile?.id === item.id);
+    if (b) setEditingBusiness(b);
+  };
+
+  const handleDeleteBusiness = (item: { id: string }) => {
+    Alert.alert(
+      'Delete Business',
+      'Are you sure you want to permanently delete this business? This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: async () => {
+          try {
+            await businessData.delete(item.id);
+            handleRefresh();
+          } catch (e: any) {
+            Alert.alert('Error', e?.message || 'Failed to delete');
+          }
+        }},
+      ]
+    );
+  };
+
+  const handleFormSubmit = async (formData: any) => {
+    if (!editingBusiness) return;
+    try {
+      await businessData.update(editingBusiness.profile.id, formData);
+      setEditingBusiness(null);
+      handleRefresh();
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'Failed to update');
+    }
+  };
 
   // Load data when view changes
   React.useEffect(() => {
@@ -173,7 +208,7 @@ function App(): React.JSX.Element {
       senderEmail: business.profile!.email ?? '',
       subject: `${(business.subscriptionTier ?? 'silver').charAt(0).toUpperCase() + (business.subscriptionTier ?? 'silver').slice(1)} - ${(business.status ?? '').replace(/_/g, ' ').toUpperCase()}`,
       preview: '',
-      date: business.joinDate || business.createdAt || new Date(),
+      date: business.joinDate || new Date(),
       isRead: business.status !== 'pending',
       isStarred: false,
       hasAttachments: false,
@@ -197,7 +232,7 @@ function App(): React.JSX.Element {
       senderEmail: customer.profile!.email ?? '',
       subject: customer.profile!.name ?? '',
       preview: `${(customer.status ?? '').replace('_', ' ')} • Customer`,
-      date: customer.createdAt || new Date(),
+      date: customer.joinDate || new Date(),
       isRead: customer.status !== 'pending',
       isStarred: false,
       hasAttachments: false,
@@ -289,6 +324,8 @@ function App(): React.JSX.Element {
                   : 'No system notifications'
             }
             onItemPress={handleItemClick}
+            onEdit={currentView === 'Members' ? handleEditBusiness : undefined}
+            onDelete={currentView === 'Members' ? handleDeleteBusiness : undefined}
           />
         </View>
       );
@@ -304,23 +341,77 @@ function App(): React.JSX.Element {
   };
 
   return (
-    <EmailClientLayout
-      currentView={currentView}
-      onViewChange={handleViewChange}
-      searchQuery={searchQuery}
-      onSearchChange={setSearchQuery}
-      onRefresh={handleRefresh}
-      onFilter={handleFilter}
-      onSettings={handleSettings}
-      onAdminAccount={handleAdminAccount}
-      onAdd={handleAdd}
-      onDelete={handleDelete}
-      onSortBy={handleSortBy}
-      onSelectAll={handleSelectAll}
-      onDeselectAll={handleDeselectAll}
-      onKeyboardShortcuts={handleKeyboardShortcuts}>
-      {renderContent()}
-    </EmailClientLayout>
+    <>
+      <EmailClientLayout
+        currentView={currentView}
+        onViewChange={handleViewChange}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onRefresh={handleRefresh}
+        onFilter={handleFilter}
+        onSettings={handleSettings}
+        onAdminAccount={handleAdminAccount}
+        onAdd={handleAdd}
+        onDelete={handleDelete}
+        onSortBy={handleSortBy}
+        onSelectAll={handleSelectAll}
+        onDeselectAll={handleDeselectAll}
+        onKeyboardShortcuts={handleKeyboardShortcuts}>
+        {renderContent()}
+      </EmailClientLayout>
+
+      {editingBusiness && (
+        <Modal
+          visible={!!editingBusiness}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setEditingBusiness(null)}>
+          <View style={{ flex: 1, backgroundColor: Colors.background }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: Colors.neutral[200], backgroundColor: Colors.primary }}>
+              <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#fff' }}>Edit Business</Text>
+              <TouchableOpacity onPress={() => setEditingBusiness(null)}>
+                <Text style={{ fontSize: 24, color: '#fff', fontWeight: 'bold' }}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <BusinessForm
+              initialData={{
+                name: editingBusiness.profile.name,
+                email: editingBusiness.profile.email,
+                phone: editingBusiness.profile.phone,
+                contactName: editingBusiness.profile.contactName,
+                addressLine1: editingBusiness.profile.addressLine1,
+                addressLine2: editingBusiness.profile.addressLine2,
+                city: editingBusiness.profile.city,
+                postcode: editingBusiness.profile.postcode,
+                country: editingBusiness.profile.country,
+                businessType: editingBusiness.profile.businessType,
+                category: editingBusiness.profile.category,
+                description: editingBusiness.profile.description,
+                companyNumber: editingBusiness.profile.companyNumber,
+                teamSize: editingBusiness.profile.teamSize,
+                website: editingBusiness.profile.website,
+                facebook: editingBusiness.profile.socialMedia?.facebook,
+                instagram: editingBusiness.profile.socialMedia?.instagram,
+                twitter: editingBusiness.profile.socialMedia?.twitter,
+                tiktok: editingBusiness.profile.socialMedia?.tiktok,
+                linkedin: editingBusiness.profile.socialMedia?.linkedin,
+                subscriptionTier: editingBusiness.subscriptionTier,
+                status: editingBusiness.status,
+                CRMIntegration: editingBusiness.profile.CRMIntegration,
+                notificationsOptIn: editingBusiness.profile.notificationsOptIn,
+                joinDate: editingBusiness.joinDate,
+                renewalDate: editingBusiness.renewalDate,
+                onboardingCompleted: editingBusiness.onboardingCompleted,
+                notes: editingBusiness.notes,
+              }}
+              onSubmit={handleFormSubmit}
+              onCancel={() => setEditingBusiness(null)}
+              mode="edit"
+            />
+          </View>
+        </Modal>
+      )}
+    </>
   );
 }
 
