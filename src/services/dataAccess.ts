@@ -166,14 +166,16 @@ export const businessData = {
 
       console.log(`[businessData.getAll] Loaded ${businesses.length} businesses from Redis (expected ${businessIds.length})`);
 
-      // Sort: RENEWAL first, then ACTIVE, then PENDING, then suspended/closed/exiting
+      // Sort: RENEWAL first, then ACTIVE, then PENDING, then suspended/closed/exiting/archived
       const statusOrder: Record<string, number> = {
+        renewal: 0,
         renewal_due: 0,
         active: 1,
         pending: 2,
         suspended: 3,
         closed: 4,
         exiting: 5,
+        archived: 6,
       };
       businesses.sort((a, b) => {
         const sa = (a.status || 'pending').toLowerCase();

@@ -255,18 +255,21 @@ const AdminBusinessesPage: React.FC<AdminBusinessesPageProps> = ({
     // For 'all' filter, exclude closed businesses unless specifically filtering for them
     // Closed businesses are archived and should not appear in active lists
     if (filter === 'all') {
-      return matchesSearch && business.status !== 'closed';
+      return matchesSearch && (business.status || '').toLowerCase() !== 'closed';
     }
     
-    const matchesFilter = business.status === filter;
+    const matchesFilter = (business.status || '').toLowerCase().replace('renewal_due', 'renewal') === filter.toLowerCase().replace('renewal_due', 'renewal');
     return matchesSearch && matchesFilter;
   });
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    const s = (status || '').toLowerCase();
+    switch (s) {
       case 'active': return Colors.accent;
       case 'pending': return Colors.secondary;
+      case 'renewal':
       case 'renewal_due': return '#FFA500';
+      case 'archived':
       case 'suspended': return '#FF6B6B';
       case 'closed': return Colors.neutral[500];
       case 'exiting': return '#DC3545';
