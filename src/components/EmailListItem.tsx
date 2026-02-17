@@ -30,6 +30,8 @@ interface EmailListItemProps {
   onSelect?: (selected: boolean) => void;
   onPress?: () => void;
   onStarPress?: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 export const EmailListItem: React.FC<EmailListItemProps> = ({
@@ -45,6 +47,8 @@ export const EmailListItem: React.FC<EmailListItemProps> = ({
   onSelect,
   onPress,
   onStarPress,
+  onEdit,
+  onDelete,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -177,6 +181,28 @@ export const EmailListItem: React.FC<EmailListItemProps> = ({
         )}
       </View>
 
+      {/* Edit & Delete */}
+      {(onEdit || onDelete) && (
+        <View style={styles.actionIcons}>
+          {onEdit && (
+            <TouchableOpacity
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              onPress={(e) => { e.stopPropagation(); onEdit(); }}
+              style={styles.actionIcon}>
+              <Text style={styles.editIcon}>✏</Text>
+            </TouchableOpacity>
+          )}
+          {onDelete && (
+            <TouchableOpacity
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              onPress={(e) => { e.stopPropagation(); onDelete(); }}
+              style={styles.actionIcon}>
+              <Text style={styles.deleteIcon}>🗑</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
       {/* Date */}
       <View style={styles.dateContainer}>
         <Text style={styles.date}>{formatDate(date)}</Text>
@@ -306,6 +332,22 @@ const styles = StyleSheet.create({
     fontSize: isMobile ? 12 : 16,
     color: '#5f6368',
     flexShrink: 0,
+  },
+  actionIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginRight: 8,
+  },
+  actionIcon: {
+    padding: 4,
+  },
+  editIcon: {
+    fontSize: 14,
+    color: '#5f6368',
+  },
+  deleteIcon: {
+    fontSize: 14,
   },
   dateContainer: {
     flexShrink: 0,

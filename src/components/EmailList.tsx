@@ -28,12 +28,16 @@ interface EmailListProps {
   items: ListItem[];
   emptyMessage?: string;
   onItemPress?: (item: ListItem) => void;
+  onEdit?: (item: ListItem) => void;
+  onDelete?: (item: ListItem) => void;
 }
 
 export const EmailList: React.FC<EmailListProps> = ({
   items,
   emptyMessage = 'No items found',
   onItemPress,
+  onEdit,
+  onDelete,
 }) => {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [starredItems, setStarredItems] = useState<Set<string>>(new Set());
@@ -88,6 +92,8 @@ export const EmailList: React.FC<EmailListProps> = ({
           onSelect={(selected) => handleSelect(item.id, selected)}
           onPress={() => onItemPress?.(item)}
           onStarPress={() => handleStar(item.id)}
+          onEdit={onEdit ? () => onEdit(item) : undefined}
+          onDelete={onDelete ? () => onDelete(item) : undefined}
         />
       ))}
     </ScrollView>

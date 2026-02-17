@@ -1,7 +1,8 @@
 import React, {useState} from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Alert, Modal, TouchableOpacity } from 'react-native';
 import EmailClientLayout from './src/components/EmailClientLayout';
 import { EmailList } from './src/components/EmailList';
+import BusinessForm from './src/components/BusinessForm';
 import { EmailToolbar } from './src/components/EmailToolbar';
 import { businessData, customerData, systemNotifications, type SystemNotification } from './src/services/dataAccess';
 import { Colors } from './src/constants/Colors';
@@ -170,9 +171,9 @@ function App(): React.JSX.Element {
       id: business.profile!.id,
       senderName: business.profile!.name ?? '',
       senderEmail: business.profile!.email ?? '',
-      subject: `${business.profile!.name ?? ''} - ${(business.subscriptionTier ?? 'silver').charAt(0).toUpperCase() + (business.subscriptionTier ?? 'silver').slice(1)}`,
-      preview: `${(business.status ?? '').replace('_', ' ')} • ${business.profile!.businessType || 'Business'}`,
-      date: business.createdAt || new Date(),
+      subject: `${(business.subscriptionTier ?? 'silver').charAt(0).toUpperCase() + (business.subscriptionTier ?? 'silver').slice(1)} - ${(business.status ?? '').replace(/_/g, ' ').toUpperCase()}`,
+      preview: '',
+      date: business.joinDate || business.createdAt || new Date(),
       isRead: business.status !== 'pending',
       isStarred: false,
       hasAttachments: false,
