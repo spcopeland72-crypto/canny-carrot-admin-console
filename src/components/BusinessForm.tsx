@@ -260,7 +260,6 @@ const BusinessForm: React.FC<BusinessFormProps> = ({
                   style={styles.suggestionItem}
                   onPress={() => {
                     handleBusinessTypeSelect(item);
-                    // Force close immediately
                     setShowBusinessTypeDropdown(false);
                   }}
                   activeOpacity={0.7}>
@@ -272,7 +271,7 @@ const BusinessForm: React.FC<BusinessFormProps> = ({
               keyboardShouldPersistTaps="handled"
             />
           </View>
-        )}
+        ) : null}
         {formData.businessType && !businessTypes.some(type => 
           type.toLowerCase() === formData.businessType.toLowerCase()
         ) && (
